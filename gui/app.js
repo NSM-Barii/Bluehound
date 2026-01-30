@@ -1,382 +1,322 @@
-// BLE Mesh Scanner Application
 class BLEScanner {
     constructor() {
         this.devices = new Map();
-        this.allDevicesEver = new Set();
+        this.allDevices = new Set();
         this.canvas = document.getElementById('radar-canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.searchBox = document.getElementById('search-box');
-        this.sortSelect = document.getElementById('sort-select');
-        this.devicesList = document.getElementById('devices-list');
 
-        this.TIMEOUT_SECONDS = 60;
-        this.UPDATE_INTERVAL = 1000; // 1 second
+        this.TIMEOUT = 60;
+        this.UPDATE_INTERVAL = 1000;
 
         this.initCanvas();
-        this.attachEventListeners();
-        this.startScanning();
+        this.initTabs();
+        this.initSearch();
+        this.start();
     }
 
     initCanvas() {
-        const container = this.canvas.parentElement;
-        const size = Math.min(container.offsetWidth, container.offsetHeight);
+        const wrapper = this.canvas.parentElement;
+        const size = Math.min(wrapper.offsetWidth, wrapper.offsetHeight);
         this.canvas.width = size;
         this.canvas.height = size;
+        window.addEventListener('resize', () => this.initCanvas());
     }
 
-    attachEventListeners() {
-        this.searchBox.addEventListener('input', () => this.renderDevicesList());
-        this.sortSelect.addEventListener('change', () => this.renderDevicesList());
-        window.addEventListener('resize', () => this.initCanvas());
+    initTabs() {
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(`${target}-view`).classList.add('active');
+
+                if (target === 'table') {
+                    this.renderTable();
+                }
+            });
+        });
+    }
+
+    initSearch() {
+        document.getElementById('search').addEventListener('input', (e) => {
+            this.searchTerm = e.target.value.toLowerCase();
+            this.renderDeviceList();
+        });
+
+        document.getElementById('table-search').addEventListener('input', (e) => {
+            this.tableSearchTerm = e.target.value.toLowerCase();
+            this.renderTable();
+        });
     }
 
     async fetchDevices() {
         try {
             const response = await fetch('/api/devices');
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
-            console.error('Error fetching devices:', error);
+            console.error('Fetch error:', error);
             return {};
         }
     }
 
     calculateDistance(rssi) {
-        // RSSI to approximate distance
-        // -30 to -50 = very close (0-2m)
-        // -50 to -70 = medium (2-5m)
-        // -70 to -100 = far (5m+)
-
-        if (rssi >= -50) return { range: 'close', meters: '< 2m', distance: 1 };
+        if (rssi >= -50) return { range: 'close', meters: '<2m', distance: 1 };
         if (rssi >= -70) return { range: 'medium', meters: '2-5m', distance: 3 };
-        return { range: 'far', meters: '> 5m', distance: 6 };
+        return { range: 'far', meters: '>5m', distance: 6 };
     }
 
-    isDeviceAlive(uptime) {
-        const now = Date.now() / 1000; // Convert to seconds
+    isAlive(uptime) {
+        const now = Date.now() / 1000;
         const age = now - uptime;
-        return age <= this.TIMEOUT_SECONDS;
+        return age <= this.TIMEOUT;
     }
 
-    async updateDevices() {
-        const deviceData = await this.fetchDevices();
+    async update() {
+        const data = await this.fetchDevices();
         const now = Date.now() / 1000;
 
-        // Track all devices ever seen
-        Object.keys(deviceData).forEach(mac => this.allDevicesEver.add(mac));
+        // Track all devices
+        Object.keys(data).forEach(mac => this.allDevices.add(mac));
 
-        // Clear devices map
+        // Clear and rebuild active devices
         this.devices.clear();
 
-        // Process and filter devices
-        for (const [mac, info] of Object.entries(deviceData)) {
+        for (const [mac, info] of Object.entries(data)) {
             const uptime = info.up_time || 0;
 
-            // Only add device if it's alive (seen within last 60 seconds)
-            if (this.isDeviceAlive(uptime)) {
+            if (this.isAlive(uptime)) {
                 const rssi = info.rssi || -100;
                 const distanceInfo = this.calculateDistance(rssi);
 
                 this.devices.set(mac, {
-                    mac: mac,
+                    mac,
                     name: info.name || 'Unknown Device',
-                    manufacturer: info.manuf || info.vendor || 'Unknown',
+                    manufacturer: info.manuf || 'Unknown',
                     vendor: info.vendor || 'Unknown',
-                    rssi: rssi,
-                    uuid: info.uuid || [],
-                    uptime: uptime,
+                    rssi,
+                    uuid: Array.isArray(info.uuid) ? info.uuid.join(', ') : (info.uuid || 'None'),
+                    uptime,
                     age: now - uptime,
                     ...distanceInfo
                 });
             }
         }
 
-        this.updateUI();
+        this.render();
     }
 
-    updateUI() {
+    render() {
         this.updateStats();
         this.renderRadar();
-        this.renderDevicesList();
+        this.renderDeviceList();
     }
 
     updateStats() {
         document.getElementById('active-count').textContent = this.devices.size;
-        document.getElementById('total-count').textContent = this.allDevicesEver.size;
+        document.getElementById('total-count').textContent = this.allDevices.size;
     }
 
     renderRadar() {
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        const centerX = width / 2;
-        const centerY = height / 2;
-        const maxRadius = Math.min(width, height) / 2 - 20;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const maxR = Math.min(w, h) / 2 - 30;
 
-        // Clear canvas
-        this.ctx.clearRect(0, 0, width, height);
+        // Clear
+        this.ctx.clearRect(0, 0, w, h);
 
-        // Draw concentric circles (distance rings)
-        this.drawRadarRings(centerX, centerY, maxRadius);
-
-        // Draw devices
-        this.drawDevicesOnRadar(centerX, centerY, maxRadius);
-    }
-
-    drawRadarRings(centerX, centerY, maxRadius) {
+        // Draw rings
         const rings = [
-            { radius: maxRadius * 0.3, color: '#10b98133', label: 'Close' },
-            { radius: maxRadius * 0.6, color: '#f59e0b33', label: 'Medium' },
-            { radius: maxRadius * 0.95, color: '#ef444433', label: 'Far' }
+            { r: maxR * 0.3, color: '#10b981', label: 'CLOSE' },
+            { r: maxR * 0.6, color: '#f59e0b', label: 'MEDIUM' },
+            { r: maxR * 0.95, color: '#ef4444', label: 'FAR' }
         ];
 
-        rings.forEach((ring, index) => {
-            // Draw ring
+        rings.forEach(ring => {
+            // Ring circle
             this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, ring.radius, 0, Math.PI * 2);
-            this.ctx.strokeStyle = ring.color;
+            this.ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+            this.ctx.strokeStyle = ring.color + '40';
             this.ctx.lineWidth = 2;
             this.ctx.stroke();
 
-            // Fill area
-            this.ctx.fillStyle = ring.color;
+            // Fill
+            this.ctx.fillStyle = ring.color + '10';
             this.ctx.fill();
 
-            // Draw label
-            this.ctx.fillStyle = '#94a3b8';
-            this.ctx.font = '12px sans-serif';
+            // Label
+            this.ctx.fillStyle = ring.color;
+            this.ctx.font = 'bold 14px sans-serif';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText(ring.label, centerX, centerY - ring.radius - 10);
+            this.ctx.fillText(ring.label, cx, cy - ring.r - 12);
         });
 
-        // Draw grid lines
-        this.ctx.strokeStyle = '#334155';
+        // Grid
+        this.ctx.strokeStyle = '#2d374840';
         this.ctx.lineWidth = 1;
-
-        // Horizontal
         this.ctx.beginPath();
-        this.ctx.moveTo(centerX - maxRadius, centerY);
-        this.ctx.lineTo(centerX + maxRadius, centerY);
+        this.ctx.moveTo(cx - maxR, cy);
+        this.ctx.lineTo(cx + maxR, cy);
+        this.ctx.moveTo(cx, cy - maxR);
+        this.ctx.lineTo(cx, cy + maxR);
         this.ctx.stroke();
 
-        // Vertical
-        this.ctx.beginPath();
-        this.ctx.moveTo(centerX, centerY - maxRadius);
-        this.ctx.lineTo(centerX, centerY + maxRadius);
-        this.ctx.stroke();
-    }
-
-    drawDevicesOnRadar(centerX, centerY, maxRadius) {
+        // Draw devices
         const devices = Array.from(this.devices.values());
-        const angleStep = (Math.PI * 2) / Math.max(devices.length, 1);
+        const step = (Math.PI * 2) / Math.max(devices.length, 1);
 
-        devices.forEach((device, index) => {
-            const angle = index * angleStep;
+        devices.forEach((device, i) => {
+            const angle = i * step;
+            let r, color;
 
-            // Calculate position based on distance
-            let radius;
-            let color;
-
-            switch(device.range) {
+            switch (device.range) {
                 case 'close':
-                    radius = maxRadius * 0.2;
+                    r = maxR * 0.2;
                     color = '#10b981';
                     break;
                 case 'medium':
-                    radius = maxRadius * 0.5;
+                    r = maxR * 0.5;
                     color = '#f59e0b';
                     break;
                 case 'far':
-                    radius = maxRadius * 0.8;
+                    r = maxR * 0.8;
                     color = '#ef4444';
                     break;
             }
 
-            const x = centerX + Math.cos(angle) * radius;
-            const y = centerY + Math.sin(angle) * radius;
+            const x = cx + Math.cos(angle) * r;
+            const y = cy + Math.sin(angle) * r;
 
-            // Draw connection line
+            // Connection line
             this.ctx.beginPath();
-            this.ctx.moveTo(centerX, centerY);
+            this.ctx.moveTo(cx, cy);
             this.ctx.lineTo(x, y);
-            this.ctx.strokeStyle = color + '40';
+            this.ctx.strokeStyle = color + '30';
             this.ctx.lineWidth = 1;
             this.ctx.stroke();
 
-            // Draw device dot
+            // Device dot
             this.ctx.beginPath();
-            this.ctx.arc(x, y, 6, 0, Math.PI * 2);
+            this.ctx.arc(x, y, 8, 0, Math.PI * 2);
             this.ctx.fillStyle = color;
             this.ctx.fill();
-
-            // Draw device outline
-            this.ctx.strokeStyle = '#f1f5f9';
+            this.ctx.strokeStyle = '#e2e8f0';
             this.ctx.lineWidth = 2;
             this.ctx.stroke();
 
-            // Pulse effect for close devices
-            if (device.range === 'close') {
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, 10, 0, Math.PI * 2);
-                this.ctx.strokeStyle = color + '60';
-                this.ctx.lineWidth = 2;
-                this.ctx.stroke();
-            }
+            // Label on dot
+            this.ctx.fillStyle = '#0f1419';
+            this.ctx.font = 'bold 10px sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(i + 1, x, y);
+
+            // Device name near dot
+            this.ctx.fillStyle = color;
+            this.ctx.font = '11px sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'top';
+            const name = device.name.length > 12 ? device.name.substring(0, 12) + '...' : device.name;
+            this.ctx.fillText(name, x, y + 12);
         });
     }
 
-    renderDevicesList() {
-        const searchTerm = this.searchBox.value.toLowerCase();
-        const sortBy = this.sortSelect.value;
-
+    renderDeviceList() {
+        const list = document.getElementById('device-list');
         let devices = Array.from(this.devices.values());
 
         // Filter by search
-        if (searchTerm) {
-            devices = devices.filter(device =>
-                device.name.toLowerCase().includes(searchTerm) ||
-                device.mac.toLowerCase().includes(searchTerm) ||
-                device.manufacturer.toLowerCase().includes(searchTerm)
+        if (this.searchTerm) {
+            devices = devices.filter(d =>
+                d.name.toLowerCase().includes(this.searchTerm) ||
+                d.mac.toLowerCase().includes(this.searchTerm) ||
+                d.manufacturer.toLowerCase().includes(this.searchTerm)
             );
         }
 
-        // Sort devices
-        devices.sort((a, b) => {
-            switch(sortBy) {
-                case 'distance':
-                    return a.distance - b.distance;
-                case 'name':
-                    return a.name.localeCompare(b.name);
-                case 'rssi':
-                    return b.rssi - a.rssi;
-                default:
-                    return 0;
-            }
-        });
+        // Sort by distance
+        devices.sort((a, b) => a.distance - b.distance);
 
-        // Render
         if (devices.length === 0) {
-            this.devicesList.innerHTML = `
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                        <path d="M12 6v6l4 2" stroke-width="2"/>
-                    </svg>
-                    <p>No devices found</p>
-                    <p style="font-size: 0.875rem; margin-top: 0.5rem;">
-                        ${searchTerm ? 'Try a different search term' : 'Waiting for BLE devices...'}
-                    </p>
-                </div>
-            `;
-        } else {
-            this.devicesList.innerHTML = devices.map(device => this.createDeviceCard(device)).join('');
+            list.innerHTML = '<div class="empty-state">No devices found</div>';
+            return;
         }
-    }
 
-    createDeviceCard(device) {
-        const signalPercent = Math.max(0, Math.min(100, ((device.rssi + 100) / 70) * 100));
-
-        return `
-            <div class="device-card ${device.range}" onclick="showDeviceModal('${device.mac}')">
-                <div class="device-header">
-                    <div class="device-name">${this.escapeHtml(device.name)}</div>
-                    <div class="device-distance ${device.range}">${device.meters}</div>
-                </div>
+        list.innerHTML = devices.map((d, i) => `
+            <div class="device-card ${d.range}">
+                <div class="device-name">${i + 1}. ${this.escape(d.name)}</div>
                 <div class="device-info">
-                    <div class="device-mac">${device.mac}</div>
-                    <div>${this.escapeHtml(device.manufacturer)}</div>
-                </div>
-                <div class="device-signal">
-                    <div class="signal-bar">
-                        <div class="signal-fill" style="width: ${signalPercent}%"></div>
+                    <div class="device-info-row">
+                        <span class="device-label">MAC:</span>
+                        <span class="device-value">${d.mac}</span>
                     </div>
-                    <div class="signal-value">${device.rssi} dBm</div>
+                    <div class="device-info-row">
+                        <span class="device-label">Manufacturer:</span>
+                        <span class="device-value">${this.escape(d.manufacturer)}</span>
+                    </div>
+                    <div class="device-info-row">
+                        <span class="device-label">RSSI:</span>
+                        <span class="device-value">${d.rssi} dBm</span>
+                    </div>
                 </div>
+                <div class="device-distance ${d.range}">${d.meters}</div>
             </div>
-        `;
+        `).join('');
     }
 
-    escapeHtml(text) {
+    renderTable() {
+        const tbody = document.getElementById('table-body');
+        let devices = Array.from(this.devices.values());
+
+        // Filter by search
+        if (this.tableSearchTerm) {
+            devices = devices.filter(d =>
+                d.name.toLowerCase().includes(this.tableSearchTerm) ||
+                d.mac.toLowerCase().includes(this.tableSearchTerm) ||
+                d.manufacturer.toLowerCase().includes(this.tableSearchTerm) ||
+                d.vendor.toLowerCase().includes(this.tableSearchTerm)
+            );
+        }
+
+        if (devices.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No devices found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = devices.map((d, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td>${this.escape(d.name)}</td>
+                <td class="mac-address">${d.mac}</td>
+                <td>${this.escape(d.manufacturer)}</td>
+                <td>${this.escape(d.vendor)}</td>
+                <td>${d.rssi} dBm</td>
+                <td><span class="distance-badge ${d.range}">${d.meters}</span></td>
+                <td>${d.age.toFixed(1)}s ago</td>
+                <td class="uuid-list">${d.uuid}</td>
+            </tr>
+        `).join('');
+    }
+
+    escape(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    startScanning() {
-        // Initial update
-        this.updateDevices();
-
-        // Periodic updates
-        setInterval(() => {
-            this.updateDevices();
-        }, this.UPDATE_INTERVAL);
+    start() {
+        this.update();
+        setInterval(() => this.update(), this.UPDATE_INTERVAL);
     }
 }
 
-// Modal functions
-function showDeviceModal(mac) {
-    const scanner = window.bleScanner;
-    const device = scanner.devices.get(mac);
-
-    if (!device) return;
-
-    const modal = document.getElementById('device-modal');
-    const modalBody = document.getElementById('modal-body');
-    const modalTitle = document.getElementById('modal-device-name');
-
-    modalTitle.textContent = device.name;
-
-    const uuid = Array.isArray(device.uuid) ? device.uuid.join(', ') : (device.uuid || 'None');
-
-    modalBody.innerHTML = `
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">MAC Address</div>
-            <div class="modal-detail-value">${device.mac}</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Manufacturer</div>
-            <div class="modal-detail-value">${device.manufacturer}</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Vendor</div>
-            <div class="modal-detail-value">${device.vendor}</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Signal Strength</div>
-            <div class="modal-detail-value">${device.rssi} dBm</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Distance</div>
-            <div class="modal-detail-value">${device.meters}</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Range</div>
-            <div class="modal-detail-value">${device.range}</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Last Seen</div>
-            <div class="modal-detail-value">${device.age.toFixed(1)}s ago</div>
-        </div>
-        <div class="modal-detail-row">
-            <div class="modal-detail-label">Service UUIDs</div>
-            <div class="modal-detail-value" style="word-break: break-all;">${uuid}</div>
-        </div>
-    `;
-
-    modal.classList.add('active');
-}
-
-function closeModal() {
-    document.getElementById('device-modal').classList.remove('active');
-}
-
-// Close modal on background click
-document.getElementById('device-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'device-modal') {
-        closeModal();
-    }
-});
-
-// Initialize app
+// Initialize
 window.addEventListener('DOMContentLoaded', () => {
-    window.bleScanner = new BLEScanner();
+    window.scanner = new BLEScanner();
 });

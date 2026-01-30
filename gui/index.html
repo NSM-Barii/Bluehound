@@ -3,96 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLE Mesh Scanner</title>
+    <title>BLE Scanner</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app">
         <!-- Header -->
         <header class="header">
-            <div class="header-left">
-                <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 32 32">
-                        <path d="M16 2L8 6v10l8 8 8-8V6l-8-4zm0 2.5L22 7v8.5l-6 6-6-6V7l6-2.5z" fill="currentColor"/>
-                        <circle cx="16" cy="12" r="3" fill="currentColor"/>
-                    </svg>
-                    <h1>BLE Mesh Scanner</h1>
-                </div>
-                <div class="status-badge">
-                    <span class="pulse-dot"></span>
-                    <span>Active Scan</span>
-                </div>
+            <div class="logo">
+                <h1>BLE Scanner</h1>
             </div>
-            <div class="header-stats">
-                <div class="stat-pill">
-                    <span class="stat-label">Active</span>
+            <div class="tabs">
+                <button class="tab active" data-tab="radar">Radar View</button>
+                <button class="tab" data-tab="table">All Devices</button>
+            </div>
+            <div class="stats">
+                <div class="stat">
                     <span class="stat-value" id="active-count">0</span>
+                    <span class="stat-label">Active</span>
                 </div>
-                <div class="stat-pill">
-                    <span class="stat-label">Total</span>
+                <div class="stat">
                     <span class="stat-value" id="total-count">0</span>
+                    <span class="stat-label">Total</span>
                 </div>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Distance Radar View -->
-            <section class="radar-section">
-                <div class="section-header">
-                    <h2>Distance Map</h2>
-                    <div class="legend">
-                        <div class="legend-item">
-                            <span class="color-dot close"></span>
-                            <span>Close (&lt;2m)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="color-dot medium"></span>
-                            <span>Medium (2-5m)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="color-dot far"></span>
-                            <span>Far (&gt;5m)</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="radar-container">
+        <!-- Radar View Tab -->
+        <div class="tab-content active" id="radar-view">
+            <div class="radar-container">
+                <div class="radar-wrapper">
                     <canvas id="radar-canvas"></canvas>
-                    <div class="radar-center">
-                        <span>YOU</span>
+                    <div class="radar-center">YOU</div>
+                </div>
+                <div class="radar-legend">
+                    <div class="legend-item">
+                        <span class="dot close"></span>
+                        <span>Close (&lt;2m)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="dot medium"></span>
+                        <span>Medium (2-5m)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="dot far"></span>
+                        <span>Far (&gt;5m)</span>
                     </div>
                 </div>
-            </section>
-
-            <!-- Device List -->
-            <section class="devices-section">
-                <div class="section-header">
+            </div>
+            <div class="devices-sidebar">
+                <div class="sidebar-header">
                     <h2>Nearby Devices</h2>
-                    <div class="filter-controls">
-                        <input type="text" id="search-box" placeholder="Search devices..." class="search-input">
-                        <select id="sort-select" class="sort-select">
-                            <option value="distance">Sort by Distance</option>
-                            <option value="name">Sort by Name</option>
-                            <option value="rssi">Sort by Signal</option>
-                        </select>
-                    </div>
+                    <input type="text" id="search" placeholder="Search..." class="search-input">
                 </div>
-                <div class="devices-list" id="devices-list">
-                    <!-- Devices will be populated here -->
+                <div class="device-list" id="device-list">
+                    <!-- Populated by JS -->
                 </div>
-            </section>
-        </main>
+            </div>
+        </div>
 
-        <!-- Device Detail Modal -->
-        <div class="modal" id="device-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="modal-device-name">Device Details</h3>
-                    <button class="modal-close" onclick="closeModal()">&times;</button>
-                </div>
-                <div class="modal-body" id="modal-body">
-                    <!-- Details populated by JS -->
-                </div>
+        <!-- Table View Tab -->
+        <div class="tab-content" id="table-view">
+            <div class="table-header">
+                <h2>All Discovered Devices</h2>
+                <input type="text" id="table-search" placeholder="Search..." class="search-input">
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Device Name</th>
+                            <th>MAC Address</th>
+                            <th>Manufacturer</th>
+                            <th>Vendor</th>
+                            <th>RSSI</th>
+                            <th>Distance</th>
+                            <th>Last Seen</th>
+                            <th>Service UUIDs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
