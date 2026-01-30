@@ -315,6 +315,7 @@ class BLEProximityMonitor {
 
     async updateDevices() {
         const deviceData = await this.fetchDevices();
+        const now = Date.now() / 1000; // Convert to seconds
 
         // Clear old devices
         const currentMacs = new Set(Object.keys(deviceData));
@@ -325,15 +326,31 @@ class BLEProximityMonitor {
             }
         }
 
-        // Update devices
-        for (let [mac, info] of Object.entries(deviceData)) {
-            const rssi = info.rssi || -100;
-            this.updateDeviceHistory(mac, rssi);
+        // Track total devices found (before filtering)
+        let totalDevicesFound = 0;
 
-            // Track known devices
+        // Update devices with filtering
+        for (let [mac, info] of Object.entries(deviceData)) {
+            // Track total devices
             if (!this.knownDevices.has(mac)) {
                 this.knownDevices.add(mac);
             }
+            totalDevicesFound = this.knownDevices.size;
+
+            // Filter out devices with uptime > 60 seconds
+            const uptime = info.up_time || 0;
+            const deviceAge = now - uptime;
+
+            // Skip devices that haven't been seen in over 60 seconds
+            if (deviceAge > 60) {
+                // Remove from active devices if present
+                this.devices.delete(mac);
+                this.signalHistory.delete(mac);
+                continue;
+            }
+
+            const rssi = info.rssi || -100;
+            this.updateDeviceHistory(mac, rssi);
 
             this.devices.set(mac, {
                 mac: mac,
@@ -342,9 +359,14 @@ class BLEProximityMonitor {
                 proximity: this.calculateProximity(rssi),
                 movement: this.calculateMovementConfidence(mac),
                 manufacturer: info.manufacturer || 'Unknown',
-                lastSeen: Date.now()
+                lastSeen: Date.now(),
+                uptime: deviceAge
             });
         }
+
+        // Store stats for rendering
+        this.totalDevicesFound = totalDevicesFound;
+        this.aliveDevices = this.devices.size;
 
         // Update timeline
         this.deviceTimeline.push({
@@ -579,7 +601,8 @@ class BLEProximityMonitor {
     }
 
     renderAnalytics() {
-        const totalDevices = document.getElementById('total-devices');
+        const totalFoundEl = document.getElementById('total-found');
+        const aliveDevicesEl = document.getElementById('alive-devices');
         const immediateCount = document.getElementById('immediate-count');
         const nearCount = document.getElementById('near-count');
         const farCount = document.getElementById('far-count');
@@ -592,7 +615,10 @@ class BLEProximityMonitor {
             else far++;
         });
 
-        totalDevices.textContent = this.devices.size;
+        // Update total found vs alive devices
+        totalFoundEl.textContent = this.totalDevicesFound || 0;
+        aliveDevicesEl.textContent = this.aliveDevices || 0;
+
         immediateCount.textContent = immediate;
         nearCount.textContent = near;
         farCount.textContent = far;

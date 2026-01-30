@@ -20,6 +20,9 @@
                     <span class="status-indicator" id="connection-status">
                         <span class="status-dot"></span> SCANNING
                     </span>
+                    <span class="filter-badge" title="Devices active in last 60 seconds">
+                        ⏱ 60s FILTER
+                    </span>
                     <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">◐</button>
                     <span class="timestamp" id="timestamp"></span>
                 </div>
@@ -62,9 +65,13 @@
                     <h2>ANALYTICS</h2>
                 </div>
                 <div class="analytics-content">
-                    <div class="stat-box">
-                        <div class="stat-label">TOTAL DEVICES</div>
-                        <div class="stat-value" id="total-devices">0</div>
+                    <div class="stat-box stat-box-highlight">
+                        <div class="stat-label">TOTAL FOUND</div>
+                        <div class="stat-value" id="total-found">0</div>
+                    </div>
+                    <div class="stat-box stat-box-highlight">
+                        <div class="stat-label">ALIVE NOW</div>
+                        <div class="stat-value stat-value-alive" id="alive-devices">0</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-label">SESSION UPTIME</div>
