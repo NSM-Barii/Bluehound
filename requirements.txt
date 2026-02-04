@@ -3,3 +3,4 @@ rich
 pathlib
 manuf
 mac-vendor-lookup
+gtts

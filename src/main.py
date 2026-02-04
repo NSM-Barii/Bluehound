@@ -31,18 +31,21 @@ class Main_Menu():
     parser.add_argument("-w", action="store_true", help="BLE Wardriving along with automatic data saving")
     parser.add_argument("-wv", action="store_true", help="BLE Wardriivng with command output")
 
+    parser.add_argument("-s", help="Server IP for led lights")
+
 
 
     args = parser.parse_args()
     
 
     # WAR DRIVING
-    war   = args.w
-    war_v = args.wv
+    war       = args.w
+    war_v     = args.wv
+    server_ip = args.s
 
 
     if  war or war_v: 
-        BLE_Sniffer.main(war_drive=war, print=war_v); exit()
+        BLE_Sniffer.main(war_drive=war, print=war_v, server_ip=server_ip); exit()
 
 
 
