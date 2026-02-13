@@ -23,7 +23,7 @@ class Main_Menu():
 
 
     parser = argparse.ArgumentParser(
-        description="IOT Framework for Wireless Recon, Fuzzing & Hacking"
+        description="BLE Sniffing Framework"
     )
 
 
@@ -45,6 +45,7 @@ class Main_Menu():
 
 
     if  war or war_v: 
+        console.print(f"[*] Mode: BLE Wardriving  -  Server IP: {server_ip}")
         BLE_Sniffer.main(war_drive=war, print=war_v, server_ip=server_ip); exit()
 
 

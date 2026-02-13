@@ -8,7 +8,8 @@ console = Console()
 
 
 # IMPORTS
-import manuf, json, os, threading
+import manuf, json, os, threading, subprocess, requests
+from gtts import gTTS
 from pathlib import Path
 from mac_vendor_lookup import MacLookup #vendors = MacLookup().load_vendors()
 
@@ -372,6 +373,141 @@ class DataBase():
             except Exception as e:
                 console.print(f"[bold red][!] Exception Error:[bold yellow] {e}")
 
+
+class Extensions():
+    """This will run extneded codes"""
+
+    
+    server_ip   = False
+    alpha       = 0.05
+    avg         = None
+    last_count  = 0
+    last_color  = False
+    drive_error = False
+
+
+    @classmethod
+    def _average_ratio(cls, current_count):
+        """This will track average device count over time"""
+
+
+        if cls.avg is None: cls.avg = float(current_count); return 0.0
+        cls.avg = (cls.avg * (1 - cls.alpha)) + (current_count * cls.alpha)
+
+        if cls.avg == 0: return 0.0
+        score = (current_count - cls.avg) / cls.avg
+
+        return round(score, 3)
+
+        
+
+    @classmethod
+    def _change_color(cls, current_count, average_ratio, server_ip, timeout=3):
+        """This will send push a http --> ESP32"""
+
+
+        """
+        Green   → Safe
+        Yellow  → Caution
+        Orange  → Warning
+        Red     → Danger
+        Purple  → Abnormal / Emergency
+
+        Baseline = “what's normal here”
+
+        Ratio = “how weird is right now”
+
+        Small bumps → Yellow
+
+        Big jumps → Orange / Red
+
+        Massive jumps → Purple
+
+        """
+
+
+        if average_ratio <= 0.0:    color = "green"
+        elif average_ratio <= 0.25: color = "yellow"
+        elif average_ratio <= 0.6:  color = "orange"
+        elif average_ratio <= 1.0:  color = "red"
+        else:                       color = "purple"
+        
+
+        try:
+
+            url = f"http://{server_ip}/?color={color}"
+            response = requests.post(url=url, timeout=timeout)
+
+            if response.status_code in [200,204]: 
+                console.print(f"[bold green][+] Successfully pushed:[/bold green] {color} --> {server_ip}  <-->  {url}")
+            
+            else: console.print(f"[bold red][-] Failed to push to LED Server:[bold yellow] Status code: {response.status_code}")
+        
+        except Exception as e: console.print(f"[bold red]Exception Error:[bold yellow] {e}")
+
+        
+        data = [current_count, average_ratio, color]
+        return data
+        
+
+
+
+    @classmethod
+    def _tts_google(cls, data=False, verbose=True):
+        """This will be responsible for pushing sound to --> Yoda Audio player"""
+
+
+        current_count = data[0]
+        average_ratio = data[1]
+        color         = data[2]
+
+        valid = ["green", "yellow", "orange", "red", "purple"]
+        
+        if cls.last_count < current_count:
+            say = f"[bold green][UP] ATTENTION, the amount of devices in your area has increased from {cls.last_count} to {current_count}. up {average_ratio} percent!"
+        
+        elif cls.last_count > current_count:
+            say = f"[bold red][DOWN] ATTENTION, the amount of devices in your area has decreased from {cls.last_count} to {current_count}. down {average_ratio} percent!"
+        
+        else: return
+
+
+        if color in valid and cls.last_count != current_count:
+
+            if verbose: console.print(say)
+            console.print(f"{cls.last_color} --> {color}")
+            console.print(f"{cls.last_count} --> {current_count}")
+        
+            cls.last_color = color
+            cls.last_count = current_count
+
+            if not cls.drive_error:
+                
+                try:
+
+                    tts = gTTS(say)
+                    path = str(Path(__file__).parent / "output.mp3")
+                    tts.save(path)
+
+                    if not os.path.exists(path=path): console.print(f"[bold red]File NOT Found Error!!!")
+
+                    subprocess.run(["yoda-audio", path], check=False)
+                    if verbose: console.print("[bold green]File --> yoda-audio!")
+                
+
+                except Exception as e: console.print(f"[bold red]Exception Error:[bold yellow] {e}")
+                cls.drive_error = True
+        
+
+
+    @classmethod
+    def Controller(cls, current_count: int, server_ip: str):
+        """This one method will be responbile for calling and handling all methods within this class <--"""
+
+
+        average = Extensions._average_ratio(current_count=current_count)
+        data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
+        Extensions._tts_google(data=data)
 
 
 if __name__ == "__main__":
