@@ -1,5 +1,5 @@
 // THIS MODULE WILL BE RESPONSIBLE FOR BLE SCANNING
-
+#pragma once
 
 // IMPORTS
 #include <NimBLEDevice.h>
@@ -8,6 +8,11 @@
 // THIS WILL BE HERE FOR REMEMBERING WHAT I NEED
 #include <esp_now.h>
 #include <WiFi.h>
+
+
+// NSM IMPORTS
+#include "nsm_sender.h"
+#include "nsm_vars.h"
 
 
 
@@ -32,14 +37,23 @@ Object	you own the data
 Pointer	you access someone else’s data
 
 &name = “give me the address of name”
+
+👉 " " = search your project first
+👉 < > = search system libraries only
+
 */
 
 
 // THIS TOOK ME ^ HOURS TO RIGHT/FULlY COMPREHEND LOL
 
 
+// GLOBAL INSTANCES
+extern ESP_Pusher sender;
+Data devices[50];
+int devicecount = 0;
 
-class Bluetooth_Scanner: public NimBLEAdvertisedDeviceCallbacks {
+
+class Bluetooth_Scanner: public NimBLEScanCallbacks {
 
     
 
@@ -59,7 +73,7 @@ class Bluetooth_Scanner: public NimBLEAdvertisedDeviceCallbacks {
             NimBLEDevice::init("");
             scanner = NimBLEDevice::getScan();  // THIS CLASS IS INSIDE THE POINTER
             scanner->setActiveScan(true);
-            scanner->setAdvertisedDeviceCallbacks(this);
+            scanner->setScanCallbacks(this);
             scanner->setInterval(interval);
             scanner->setWindow(99);
 
@@ -72,19 +86,26 @@ class Bluetooth_Scanner: public NimBLEAdvertisedDeviceCallbacks {
             // THIS METHOD WILL BE THE CALLBACK AUTOMATICALLY 
 
 
-            auto name = device->getName();
             int8_t rssi = device->getRSSI();
-            auto mac = device->getAddress();
-            auto manuf_data = device->getManufacturerData();
+            String mac = String(device->getAddress().toString().c_str());
+            String name = String(device->getName().c_str());
+            const char* manuf_data = device->getManufacturerData().c_str();
 
 
             Serial.printf(
-            "RSSI: %d | Mac: %s | Name: %s | Data: %s\n",
+            "RSSI: %d | Mac: %s | Name: %s \n",
             rssi, 
-            mac.toString().c_str(),
-            name.c_str(),
-            manuf_data.c_str()
+            mac.c_str(),
+            name.c_str()
+            //manuf_data  // TAKE THIS OUT FOR NOW
             );
+                 
+            
+            if (devicecount < 50){
+
+                devices[devicecount++] = sender.createData(rssi, mac, name, manuf_data);
+
+            }
 
 
         }
@@ -96,12 +117,16 @@ class Bluetooth_Scanner: public NimBLEAdvertisedDeviceCallbacks {
 
            
             scanner->start(duration, false);
+            delay(duration);
             scanner->clearResults();
+            
+           // sender.sendBatch(devices, devicecount);
+            devicecount = 0;
+
         
 
         }
-
-
+        
 
 };
 
