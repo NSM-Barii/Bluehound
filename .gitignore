@@ -1,0 +1,5 @@
+venv/
+esp32*
+*.cpython
+*.pyc
+extensions.json

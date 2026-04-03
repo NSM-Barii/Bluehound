@@ -13,15 +13,20 @@
 
 class ESP_Pusher{
 
+    /*
+    👉 char[] = perfect
+    👉 String = not safe here
+    */
+
 
     private:
         uint8_t receiverAddress[6];
-
-        struct data {
-            int rssi,
-            char mac[18],
-            String name,
-            String manuf_data
+       
+        struct Data {
+            int rssi;
+            char mac[18];  // YOU MAKE THESE A ARRAY SO strcpy CAN
+            char name[32];
+            char manuf_data[64];
 
         };
 
@@ -30,6 +35,19 @@ class ESP_Pusher{
 
 
         void send(int rssi, String mac, String name, const char* manuf_data){
+            // THIS METHOD WILL BE USED TO DIRECTLY PUSH DATA TO MASTER
+
+
+            // CREATE OBJECT & ASSIGN VARIABLES
+            Data data;
+
+            // VARS
+            data.rssi = rssi;
+            strcpy(data.mac, mac.c_str());
+            strcpy(data.name, name.c_str());
+            strcpy(data.manuf_data, manuf_data);
+
+            esp_now_send(receiverAddress, (uint8_t*)&data, sizeof(data));
 
 
             
