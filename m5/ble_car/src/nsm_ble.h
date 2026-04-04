@@ -123,11 +123,11 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
                                          ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~
 *** [.pio/build/esp32dev/src/main.cpp.o] Error 1
             */
-            NimBLEScanResults results = scanner->start(duration / 1000, false);
-            Serial.printf("  [Scan Results: %d devices]\n", results.getCount());
-            // scanner->start(duration, false);
-            // delay(duration);
-            // scanner->clearResults();
+            // NimBLEScanResults results = scanner->start(duration / 1000, false);
+            // Serial.printf("  [Scan Results: %d devices]\n", results.getCount());
+            scanner->start(duration / 1000, false);
+            delay(duration);
+            scanner->clearResults();
 
            // sender.sendBatch(devices, devicecount);
             devicecount = 0;
