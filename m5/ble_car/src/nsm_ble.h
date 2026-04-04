@@ -115,7 +115,12 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
 
         void Main(int duration = 100){
             // THIS WILL BE USED TO LAUNCH ITER AND THEN LOOP ITERATE SCANNER
-
+In file included from src/main.cpp:7:
+src/nsm_ble.h: In member function 'virtual void Bluetooth_Scanner::onDiscovered(const NimBLEAdvertisedDevice*)':
+src/nsm_ble.h:92:64: error: conversion from 'std::__cxx11::string' {aka 'std::__cxx11::basic_string<char>'} to non-scalar type 'String' requested
+             String manuf_data_str = device->getManufacturerData();
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+*** [.pio/build/esp32dev/src/main.cpp.o] Error 1
 
 
             scanner->start(duration/1000, false);
