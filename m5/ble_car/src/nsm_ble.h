@@ -85,7 +85,8 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
         void onResult(NimBLEAdvertisedDevice* device){
             // THIS METHOD WILL BE THE CALLBACK AUTOMATICALLY 
 
-
+            
+            Serial.println("starting");
             int8_t rssi = device->getRSSI();
             String mac = String(device->getAddress().toString().c_str());
             String name = String(device->getName().c_str());
@@ -117,15 +118,8 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
 
             
 
-            /*
-            src/nsm_ble.h:119:55: error: conversion from 'bool' to non-scalar type 'NimBLEScanResults' requested
-             NimBLEScanResults results = scanner->start(duration / 1000, false);
-                                         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~
-*** [.pio/build/esp32dev/src/main.cpp.o] Error 1
-            */
-            // NimBLEScanResults results = scanner->start(duration / 1000, false);
-            // Serial.printf("  [Scan Results: %d devices]\n", results.getCount());
-            scanner->start(duration / 1000, false);
+
+            scanner->start(duration, false);
             delay(duration);
             scanner->clearResults();
 

@@ -24,8 +24,8 @@ void setup() {
   ble.setup();
   Serial.println("[+] BLE initialized!");
 
-  uint8_t masterAddr[] = {0x24, 0x6F, 0x28, 0xAA, 0xBB, 0xCC};
-  sender.setReceiver(masterAddr);
+  //uint8_t masterAddr[] = {0x24, 0x6F, 0x28, 0xAA, 0xBB, 0xCC};
+  //sender.setReceiver(masterAddr);
 
   // Serial.println("[*] Initializing ESP-NOW...");
   // sender.setup();
