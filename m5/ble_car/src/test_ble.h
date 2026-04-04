@@ -6,39 +6,28 @@
 
 NimBLEScan* pScan;
 
+class ScanCallbacks: public NimBLEScanCallbacks {
+    void onResult(const NimBLEAdvertisedDevice* device) {
+        Serial.printf("Device: %s | RSSI: %d | MAC: %s\n",
+            device->getName().c_str(),
+            device->getRSSI(),
+            device->getAddress().toString().c_str()
+        );
+    }
+};
+
 void setupBLE(){
     Serial.println("Initializing BLE...");
     NimBLEDevice::init("");
     pScan = NimBLEDevice::getScan();
+    pScan->setScanCallbacks(new ScanCallbacks());
     pScan->setActiveScan(true);
-    pScan->setInterval(1349);
-    pScan->setWindow(449);
+    pScan->setInterval(100);
+    pScan->setWindow(99);
     Serial.println("BLE Ready!");
 }
 
-void scanBLE(int duration){
+void scanBLE(int seconds){
     Serial.println("Starting scan...");
-
-    if(pScan->isScanning()){
-        pScan->stop();
-    }
-
-    pScan->start(0, nullptr, false);
-    delay(duration * 1000);
-    pScan->stop();
-
-    NimBLEScanResults results = pScan->getResults();
-    Serial.printf("Found %d devices:\n", results.getCount());
-
-    for(int i = 0; i < results.getCount(); i++){
-        const NimBLEAdvertisedDevice* device = results.getDevice(i);
-
-        Serial.printf("  RSSI: %d | MAC: %s | Name: %s\n",
-            device->getRSSI(),
-            device->getAddress().toString().c_str(),
-            device->getName().c_str()
-        );
-    }
-
-    pScan->clearResults();
+    pScan->start(seconds, false);
 }
