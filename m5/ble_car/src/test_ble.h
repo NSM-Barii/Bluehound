@@ -24,7 +24,7 @@ void scanBLE(int duration){
     Serial.printf("Found %d devices:\n", results.getCount());
 
     for(int i = 0; i < results.getCount(); i++){
-        NimBLEAdvertisedDevice* device = results.getDevice(i);
+        const NimBLEAdvertisedDevice* device = results.getDevice(i);
 
         Serial.printf("  RSSI: %d | MAC: %s | Name: %s\n",
             device->getRSSI(),
