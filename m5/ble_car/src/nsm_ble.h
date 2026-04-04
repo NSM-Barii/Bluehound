@@ -115,7 +115,14 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
         void Main(int duration = 100){
             // THIS WILL BE USED TO LAUNCH ITER AND THEN LOOP ITERATE SCANNER
 
+            
 
+            /*
+            src/nsm_ble.h:119:55: error: conversion from 'bool' to non-scalar type 'NimBLEScanResults' requested
+             NimBLEScanResults results = scanner->start(duration / 1000, false);
+                                         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~
+*** [.pio/build/esp32dev/src/main.cpp.o] Error 1
+            */
             NimBLEScanResults results = scanner->start(duration / 1000, false);
             Serial.printf("  [Scan Results: %d devices]\n", results.getCount());
             // scanner->start(duration, false);
