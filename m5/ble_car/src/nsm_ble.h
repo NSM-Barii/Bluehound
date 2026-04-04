@@ -116,10 +116,27 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
         void Main(int duration = 100){
             // THIS WILL BE USED TO LAUNCH ITER AND THEN LOOP ITERATE SCANNER
 
+
+
+            /*
+            
+            [*] Scan complete. Found 0 devices
+
+[*] Starting BLE scan...
+[*] Scan complete. Found 0 devices
+
+[*] Starting BLE scan...
+[*] Scan complete. Found 0 devices
+
+[*] Starting BLE scan...
+[*] Scan complete. Found 0 devices
+
+            */
+
             
 
 
-            scanner->start(duration, false);
+            scanner->start(duration/1000, false);
             delay(duration);
             scanner->clearResults();
 
