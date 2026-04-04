@@ -72,10 +72,10 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
             // INIT SCANNER
             NimBLEDevice::init("");
             scanner = NimBLEDevice::getScan();  // THIS CLASS IS INSIDE THE POINTER
-            scanner->setActiveScan(false);
+            scanner->setActiveScan(true);
             scanner->setScanCallbacks(this);
-            scanner->setInterval(interval);
-            scanner->setWindow(99);
+            scanner->setInterval(1349);
+            scanner->setWindow(449);
 
 
             

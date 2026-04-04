@@ -36,7 +36,7 @@ void setup() {
 void loop() {
 
   Serial.println("[*] Starting BLE scan...");
-  ble.Main(2000);
+  ble.Main(5000);
   Serial.printf("[*] Scan complete. Found %d devices\n\n", devicecount);
 
 }
