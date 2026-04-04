@@ -1,18 +1,18 @@
 #include <Arduino.h>
 
 // TEST
-#include "test_ble.h"
+// #include "test_ble.h"
 
 // NSM IMPORTS
-// #include "nsm_ble.h"
+#include "nsm_ble.h"
 #include "nsm_sender.h"
 
 // EXTERNAL VARIABLES
-// extern int devicecount;
+extern int devicecount;
 
 // INSTANCES
 ESP_Pusher sender;
-// Bluetooth_Scanner ble;
+Bluetooth_Scanner ble;
 
 
 void setup() {
@@ -22,7 +22,9 @@ void setup() {
 
   Serial.println("\n\n[+] Starting BLE Car Scanner...");
 
-  setupBLE();
+  Serial.println("[*] Initializing BLE...");
+  ble.setup();
+  Serial.println("[+] BLE initialized!");
 
   //uint8_t masterAddr[] = {0x24, 0x6F, 0x28, 0xAA, 0xBB, 0xCC};
   //sender.setReceiver(masterAddr);
@@ -35,7 +37,9 @@ void setup() {
 
 void loop() {
 
-  scanBLE(5);
+  Serial.println("[*] Starting BLE scan...");
+  ble.Main(5000);
+  Serial.printf("[*] Scan complete. Found %d devices\n\n", devicecount);
   delay(2000);
 
 }

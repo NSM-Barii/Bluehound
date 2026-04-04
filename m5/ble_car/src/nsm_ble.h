@@ -66,19 +66,18 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
 
         void setup(int interval = 100){
             // THIS METHOD WILL BE RESPONSIBLE FOR INITIALIZING THE BLE SCANNER
-            
-            
+
 
             // INIT SCANNER
             NimBLEDevice::init("");
             scanner = NimBLEDevice::getScan();  // THIS CLASS IS INSIDE THE POINTER
             scanner->setActiveScan(true);
-            scanner->setScanCallbacks(this);
+            scanner->setScanCallbacks(this, false);
             scanner->setInterval(1349);
             scanner->setWindow(449);
+            scanner->setMaxResults(0);
 
 
-            
         }
 
 
@@ -118,27 +117,7 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
 
 
 
-            /*
-            
-In file included from src/main.cpp:4:
-src/test_ble.h: In function 'void scanBLE(int)':
-src/test_ble.h:21:45: error: conversion from 'bool' to non-scalar type 'NimBLEScanResults' requested
-     NimBLEScanResults results = pScan->start(duration, false);
-                                 ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
-src/test_ble.h:26:58: error: conversion from 'const NimBLEAdvertisedDevice*' to non-scalar type 'NimBLEAdvertisedDevice' requested
-         NimBLEAdvertisedDevice device = results.getDevice(i);
-                                         ~~~~~~~~~~~~~~~~~^~~
-Compiling .pio/build/esp32dev/lib0cf/NimBLE-Arduino/NimBLEEddystoneTLM.cpp.o
-*** [.pio/build/esp32dev/src/main.cpp.o] Error 1
-===================================================
-            */
-
-            
-
-
             scanner->start(duration/1000, false);
-            delay(duration);
-            scanner->clearResults();
 
            // sender.sendBatch(devices, devicecount);
             devicecount = 0;

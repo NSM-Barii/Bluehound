@@ -18,7 +18,14 @@ void setupBLE(){
 
 void scanBLE(int duration){
     Serial.println("Starting scan...");
-    pScan->start(duration, false);
+
+    if(pScan->isScanning()){
+        pScan->stop();
+    }
+
+    pScan->start(0, nullptr, false);
+    delay(duration * 1000);
+    pScan->stop();
 
     NimBLEScanResults results = pScan->getResults();
     Serial.printf("Found %d devices:\n", results.getCount());
