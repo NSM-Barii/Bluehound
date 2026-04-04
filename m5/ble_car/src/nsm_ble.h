@@ -120,17 +120,17 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
 
             /*
             
-            [*] Scan complete. Found 0 devices
-
-[*] Starting BLE scan...
-[*] Scan complete. Found 0 devices
-
-[*] Starting BLE scan...
-[*] Scan complete. Found 0 devices
-
-[*] Starting BLE scan...
-[*] Scan complete. Found 0 devices
-
+In file included from src/main.cpp:4:
+src/test_ble.h: In function 'void scanBLE(int)':
+src/test_ble.h:21:45: error: conversion from 'bool' to non-scalar type 'NimBLEScanResults' requested
+     NimBLEScanResults results = pScan->start(duration, false);
+                                 ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+src/test_ble.h:26:58: error: conversion from 'const NimBLEAdvertisedDevice*' to non-scalar type 'NimBLEAdvertisedDevice' requested
+         NimBLEAdvertisedDevice device = results.getDevice(i);
+                                         ~~~~~~~~~~~~~~~~~^~~
+Compiling .pio/build/esp32dev/lib0cf/NimBLE-Arduino/NimBLEEddystoneTLM.cpp.o
+*** [.pio/build/esp32dev/src/main.cpp.o] Error 1
+===================================================
             */
 
             
