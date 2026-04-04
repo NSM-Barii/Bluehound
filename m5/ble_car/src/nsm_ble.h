@@ -82,10 +82,10 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
         }
 
 
-        void onResult(NimBLEAdvertisedDevice* device){
-            // THIS METHOD WILL BE THE CALLBACK AUTOMATICALLY 
+        void onDiscovered(NimBLEAdvertisedDevice* device){
+            // THIS METHOD WILL BE THE CALLBACK AUTOMATICALLY
 
-            
+
             Serial.println("starting");
             int8_t rssi = device->getRSSI();
             String mac = String(device->getAddress().toString().c_str());
