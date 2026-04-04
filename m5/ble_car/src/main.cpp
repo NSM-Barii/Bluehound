@@ -1,18 +1,14 @@
 #include <Arduino.h>
 
-// TEST
-#include "test_ble.h"
-
 // NSM IMPORTS
-// #include "nsm_ble.h"
-// #include "nsm_sender.h"
+#include "nsm_ble.h"
+#include "nsm_sender.h"
 
-// EXTERNAL VARIABLES
-// extern int devicecount;
+extern int devicecount;
 
 // INSTANCES
-// ESP_Pusher sender;
-// Bluetooth_Scanner ble;
+ESP_Pusher sender;
+Bluetooth_Scanner ble;
 
 
 void setup() {
@@ -21,14 +17,14 @@ void setup() {
   delay(1000);
 
   Serial.println("\n\n[+] Starting BLE Scanner...");
-  setupBLE();
+  ble.setup();
   Serial.println("[+] Setup complete!\n");
 
 }
 
 void loop() {
 
-  scanBLE(5);
+  ble.Main(5000);
   delay(2000);
 
 }

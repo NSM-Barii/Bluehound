@@ -72,16 +72,15 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
             NimBLEDevice::init("");
             scanner = NimBLEDevice::getScan();  // THIS CLASS IS INSIDE THE POINTER
             scanner->setActiveScan(true);
-            scanner->setScanCallbacks(this, false);
-            scanner->setInterval(1349);
-            scanner->setWindow(449);
-            scanner->setMaxResults(0);
+            scanner->setScanCallbacks(this);
+            scanner->setInterval(100);
+            scanner->setWindow(99);
 
 
         }
 
 
-        void onDiscovered(const NimBLEAdvertisedDevice* device){
+        void onResult(const NimBLEAdvertisedDevice* device){
             // THIS METHOD WILL BE THE CALLBACK AUTOMATICALLY
 
 
