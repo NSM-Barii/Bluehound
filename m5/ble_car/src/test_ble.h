@@ -18,17 +18,18 @@ void setupBLE(){
 
 void scanBLE(int duration){
     Serial.println("Starting scan...");
-    NimBLEScanResults results = pScan->start(duration, false);
+    pScan->start(duration, false);
 
+    NimBLEScanResults results = pScan->getResults();
     Serial.printf("Found %d devices:\n", results.getCount());
 
     for(int i = 0; i < results.getCount(); i++){
-        NimBLEAdvertisedDevice device = results.getDevice(i);
+        NimBLEAdvertisedDevice* device = results.getDevice(i);
 
         Serial.printf("  RSSI: %d | MAC: %s | Name: %s\n",
-            device.getRSSI(),
-            device.getAddress().toString().c_str(),
-            device.getName().c_str()
+            device->getRSSI(),
+            device->getAddress().toString().c_str(),
+            device->getName().c_str()
         );
     }
 
