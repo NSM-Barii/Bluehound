@@ -115,15 +115,17 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
         void Main(int duration = 100){
             // THIS WILL BE USED TO LAUNCH ITER AND THEN LOOP ITERATE SCANNER
 
-           
-            scanner->start(duration, false);
-            delay(duration);
-            scanner->clearResults();
-            
+
+            NimBLEScanResults results = scanner->start(duration / 1000, false);
+            Serial.printf("  [Scan Results: %d devices]\n", results.getCount());
+            // scanner->start(duration, false);
+            // delay(duration);
+            // scanner->clearResults();
+
            // sender.sendBatch(devices, devicecount);
             devicecount = 0;
 
-        
+
 
         }
         
