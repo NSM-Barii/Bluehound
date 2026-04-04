@@ -81,7 +81,7 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
         }
 
 
-        void onDiscovered(NimBLEAdvertisedDevice* device){
+        void onDiscovered(const NimBLEAdvertisedDevice* device){
             // THIS METHOD WILL BE THE CALLBACK AUTOMATICALLY
 
 
@@ -89,7 +89,8 @@ class Bluetooth_Scanner: public NimBLEScanCallbacks {
             int8_t rssi = device->getRSSI();
             String mac = String(device->getAddress().toString().c_str());
             String name = String(device->getName().c_str());
-            const char* manuf_data = device->getManufacturerData().c_str();
+            String manuf_data_str = device->getManufacturerData();
+            const char* manuf_data = manuf_data_str.c_str();
 
 
             Serial.printf(
