@@ -12,7 +12,7 @@ import json, os; from pathlib import Path
 
 
 # NSM IMPORTS
-from nsm_mesh_finder import BLE_Sniffer
+from nsm_vars import Variables
 
 
 
@@ -29,14 +29,18 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
         """This will handle basic web server requests"""
 
 
+        live_map  = Variables.live_map
+        war_drive = Variables.war_drive
+
+
         if self.path == "/api/devices":
 
             self.send_response(200)
             self.send_header("content-type", "application/json")
             self.send_header("Access-Control-Allow-Origin", '*')
             self.end_headers()
-
-            self.wfile.write(json.dumps(BLE_Sniffer.live_map).encode())
+            
+            self.wfile.write(json.dumps(live_map).encode())
 
         elif self.path == "/api/wardriving":
 
@@ -45,7 +49,7 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", '*')
             self.end_headers()
 
-            self.wfile.write(json.dumps(BLE_Sniffer.war_drive).encode())
+            self.wfile.write(json.dumps(war_drive).encode())
 
         else: super().do_GET()
 

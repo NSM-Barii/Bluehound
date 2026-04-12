@@ -13,6 +13,10 @@ from gtts import gTTS
 from pathlib import Path
 from mac_vendor_lookup import MacLookup #vendors = MacLookup().load_vendors()
 
+
+# NSM IMPORTS
+from nsm_vars import Variables
+
 LOCK = threading.Lock()
 
 
@@ -327,20 +331,15 @@ class DataBase():
             data  = {}
             num = 0
             macs = []
-            
-            if False:
-                try:
-                    NAME = "bluehound"
-                    USER_HOME = Path(os.getenv("SUDO_USER") and f"/home/{os.getenv('SUDO_USER')}") or Path.home()
-                    BASE_DIR = USER_HOME / "Documents" / "nsm_tools" / f"{NAME}" / "gui"
 
-                except Exception as e:
-                    BASE_DIR = Path.home() / "Documents" / "nsm_tools" / f"{NAME}" / "gui"
-                
-                BASE_DIR.mkdir(exist_ok=True, parents=True)
+            file_saving = Variables.file_saving
+
+            if not file_saving: return False
+            
+
 
             path = Path(__file__).parent.parent / "database" 
-            #console.print(path)
+
 
             try:
 
@@ -362,16 +361,15 @@ class DataBase():
 
                 with open(drive, "w") as file: json.dump(data, file, indent=4)
                 if verbose: console.print("[bold green][+] Wardrive pushed!")
-                #console.print(data)
-            
+
+
             except json.JSONDecodeError as e:
                 console.print(f"[bold red][!] JSON Error:[bold yellow] {e}")
                 with open(drive, "w") as file: json.dump(data, file, indent=4)
                 console.print("[bold green][+] json file created!")
 
                           
-            except Exception as e:
-                console.print(f"[bold red][!] Exception Error:[bold yellow] {e}")
+            except Exception as e: console.print(f"[bold red][!] Exception Error:[bold yellow] {e}")
 
 
 class Extensions():
@@ -503,7 +501,10 @@ class Extensions():
     @classmethod
     def Controller(cls, current_count: int, server_ip: str):
         """This one method will be responbile for calling and handling all methods within this class <--"""
+        
 
+
+        if not server_ip: return False
 
         average = Extensions._average_ratio(current_count=current_count)
         data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
