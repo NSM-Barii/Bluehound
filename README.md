@@ -47,9 +47,9 @@ pip install -r ../requirements.txt
 
 ## Usage
 
-Run the scanner with wardriving mode:
+Run the scanner:
 ```bash
-sudo venv/bin/python main.py -w
+sudo venv/bin/python main.py 
 ```
 
 Access the web interface at `http://localhost:8000`
