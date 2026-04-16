@@ -1,43 +1,33 @@
 #include <Arduino.h>
+#include <SPI.h>
 
-// NSM IMPORTS
-#include "nsm_ble.h"
-#include "nsm_sender.h"
+// TEMP: using generic driver just to confirm screen pipeline
+// This will likely NOT fully work until we match the panel,
+// but we’re forcing hardware validation first.
 
-extern int devicecount;
-
-// INSTANCES
-ESP_Pusher sender;
-Bluetooth_Scanner ble;
-
+#define TFT_MOSI 18
+#define TFT_SCLK 47
+#define TFT_CS   5
 
 void setup() {
+    Serial.begin(115200);
+    delay(1000);
 
-  Serial.begin(115200);
-  delay(1000);
+    Serial.println("[+] Starting display test...");
 
-  Serial.println("\n\n[+] Starting BLE Scanner...");
-  ble.setup();
-  Serial.println("[+] Setup complete!\n");
+    SPI.begin(TFT_SCLK, -1, TFT_MOSI, TFT_CS);
 
+    Serial.println("[+] SPI initialized");
+
+    // Manual raw test (IMPORTANT)
+    pinMode(TFT_CS, OUTPUT);
+    digitalWrite(TFT_CS, LOW);
+
+    SPI.transfer(0xAA);  // dummy data
+
+    digitalWrite(TFT_CS, HIGH);
+
+    Serial.println("[+] SPI signal sent");
 }
 
-void loop() {
-
-  ble.Main(5000);
-  delay(2000);
-
-}
-
-
-
-Starting scan...
-Starting scan...
-Starting scan...
-Device:  | RSSI: -88 | MAC: b0:22:7a:99:e7:7b
-Starting scan...
-Starting scan...
-Starting scan...
-Starting scan...
-Device: Smart Light | RSSI: -81 | MAC: 90:00:00:49:ce:15
-Starting scan...
+void loop() {}cj
