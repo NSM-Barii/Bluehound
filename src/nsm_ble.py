@@ -90,11 +90,10 @@ class BLE_Sniffer():
                 await scanner.stop()
                 devices = scanner.discovered_devices_and_advertisement_data
 
-                # Remove stale devices from live_map (not seen in 30 seconds)
-                current_time = time.time()
-                stale_macs = [mac for mac, data in cls.live_map.items() if current_time - data["up_time"] > 30]
-                for mac in stale_macs:
-                    del cls.live_map[mac]
+
+                #current_time = time.time()
+                #stale_macs = [mac for mac, data in cls.live_map.items() if current_time - data["up_time"] > 30]
+                #for mac in stale_macs: del cls.live_map[mac]
 
                 if devices: 
                 
@@ -124,7 +123,7 @@ class BLE_Sniffer():
 
                         if mac not in cls.devices:
                             
-                            cls.devices.append(mac); cls.num += 1
+                            cls.devices.append(mac)
                             cls.war_drive[len(cls.devices)] = data
             
                             console.print(f"{len(cls.devices)}", rssi, mac, manuf, vendor, name, uuid)
