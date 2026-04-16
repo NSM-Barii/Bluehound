@@ -38,7 +38,7 @@ class BLEScanner {
         this.ctx = this.canvas.getContext('2d');
 
         this.TIMEOUT = 10;
-        this.UPDATE_INTERVAL = 1000;
+        this.UPDATE_INTERVAL = 500;
         this.startTime = Date.now();
 
         this.sweepAngle = 0;

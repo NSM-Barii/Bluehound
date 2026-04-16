@@ -477,9 +477,6 @@ class Extensions():
             if verbose: console.print(say)
             console.print(f"{cls.last_color} --> {color}")
             console.print(f"{cls.last_count} --> {current_count}")
-        
-            cls.last_color = color
-            cls.last_count = current_count
 
             if not cls.drive_error:
                 
@@ -508,7 +505,11 @@ class Extensions():
 
         average = Extensions._average_ratio(current_count=current_count)
         data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
+
         Extensions._tts_google(data=data)
+
+        cls.last_count = data[0]
+        cls.last_color = data[2]
 
     @classmethod
     def get_status(cls):
