@@ -84,13 +84,17 @@ class BLE_Sniffer():
             scanner = BleakScanner()
 
             while 0 < timeout:
-                
 
                 await scanner.start()
                 await asyncio.sleep(5)
                 await scanner.stop()
                 devices = scanner.discovered_devices_and_advertisement_data
 
+                # Remove stale devices from live_map (not seen in 30 seconds)
+                current_time = time.time()
+                stale_macs = [mac for mac, data in cls.live_map.items() if current_time - data["up_time"] > 30]
+                for mac in stale_macs:
+                    del cls.live_map[mac]
 
                 if devices: 
                 
