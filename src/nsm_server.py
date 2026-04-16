@@ -62,7 +62,68 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
             status = Extensions.get_status()
             self.wfile.write(json.dumps(status).encode())
 
+        elif self.path == "/api/history":
+
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", '*')
+            self.end_headers()
+
+            self.wfile.write(json.dumps(Variables.history).encode())
+
+        elif self.path == "/api/stats":
+
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", '*')
+            self.end_headers()
+
+            import time
+            stats = {
+                "min_count": Variables.min_count or 0,
+                "max_count": Variables.max_count or 0,
+                "current_avg": round(Extensions.avg, 2) if Extensions.avg is not None else 0,
+                "uptime": round(time.time() - Variables.start_time, 1) if Variables.start_time else 0
+            }
+            self.wfile.write(json.dumps(stats).encode())
+
+        elif self.path == "/api/threats":
+
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", '*')
+            self.end_headers()
+
+            self.wfile.write(json.dumps(Variables.threat_log).encode())
+
         else: super().do_GET()
+
+    def do_POST(self) -> None:
+        """Handle POST requests"""
+
+        if self.path == "/api/baseline/reset":
+
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", '*')
+            self.end_headers()
+
+            Extensions.avg = None
+            Extensions.last_count = 0
+            Extensions.last_color = "green"
+            Variables.history.clear()
+            Variables.threat_log.clear()
+            Variables.min_count = None
+            Variables.max_count = None
+
+            import time
+            Variables.start_time = time.time()
+
+            self.wfile.write(json.dumps({"status": "success", "message": "Baseline reset"}).encode())
+
+        else:
+            self.send_response(404)
+            self.end_headers()
 
 
 

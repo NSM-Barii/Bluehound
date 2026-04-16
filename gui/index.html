@@ -15,6 +15,7 @@
             </div>
             <div class="tabs">
                 <button class="tab active" data-tab="radar">Radar View</button>
+                <button class="tab" data-tab="dashboard">Dashboard</button>
                 <button class="tab" data-tab="table">All Devices</button>
             </div>
             <div class="header-info">
@@ -82,6 +83,50 @@
                 </div>
                 <div class="device-list" id="device-list">
                     <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard View Tab -->
+        <div class="tab-content" id="dashboard-view">
+            <div class="dashboard-container">
+                <!-- Stats Cards -->
+                <div class="dashboard-section stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-card-label">Min Devices</div>
+                        <div class="stat-card-value" id="stat-min">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Max Devices</div>
+                        <div class="stat-card-value" id="stat-max">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Current Baseline</div>
+                        <div class="stat-card-value" id="stat-baseline">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-label">Session Uptime</div>
+                        <div class="stat-card-value" id="stat-uptime">0s</div>
+                    </div>
+                </div>
+
+                <!-- Chart Section -->
+                <div class="dashboard-section chart-section">
+                    <div class="section-header">
+                        <h3>Device Count Over Time</h3>
+                        <button class="reset-btn" id="reset-baseline">Reset Baseline</button>
+                    </div>
+                    <canvas id="history-chart"></canvas>
+                </div>
+
+                <!-- Threat Log -->
+                <div class="dashboard-section threat-log-section">
+                    <div class="section-header">
+                        <h3>Threat Level Changes</h3>
+                    </div>
+                    <div class="threat-log" id="threat-log">
+                        <div class="empty-state">No threat level changes yet</div>
+                    </div>
                 </div>
             </div>
         </div>

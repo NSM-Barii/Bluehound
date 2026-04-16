@@ -98,8 +98,17 @@ class BLEScanner {
 
                 if (target === 'table') {
                     this.renderTable();
+                } else if (target === 'dashboard') {
+                    this.renderDashboard();
                 }
             });
+        });
+
+        // Reset baseline button
+        document.getElementById('reset-baseline').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to reset the baseline? This will clear all historical data.')) {
+                await this.resetBaseline();
+            }
         });
     }
 
@@ -142,6 +151,47 @@ class BLEScanner {
         } catch (error) {
             console.error('Fetch error:', error);
             return { current_count: 0, baseline: 0, color: 'green', percent: 0 };
+        }
+    }
+
+    async fetchHistory() {
+        try {
+            const response = await fetch('/api/history');
+            return await response.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return [];
+        }
+    }
+
+    async fetchStats() {
+        try {
+            const response = await fetch('/api/stats');
+            return await response.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return { min_count: 0, max_count: 0, current_avg: 0, uptime: 0 };
+        }
+    }
+
+    async fetchThreats() {
+        try {
+            const response = await fetch('/api/threats');
+            return await response.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return [];
+        }
+    }
+
+    async resetBaseline() {
+        try {
+            const response = await fetch('/api/baseline/reset', { method: 'POST' });
+            const result = await response.json();
+            console.log(result.message);
+            this.renderDashboard();
+        } catch (error) {
+            console.error('Reset error:', error);
         }
     }
 
@@ -329,7 +379,7 @@ class BLEScanner {
             percent.textContent = `${sign}${this.currentStatus.percent}%`;
 
             // Update baseline text
-            baseline.textContent = `Baseline: ${this.currentStatus.current_count}`;
+            baseline.textContent = `Baseline: ${this.currentStatus.baseline}`;
         }
     }
 
@@ -551,6 +601,177 @@ class BLEScanner {
                     <td>${d.age.toFixed(1)}s ago</td>
                     <td class="uuid-list">${d.uuid}</td>
                 </tr>
+            `;
+        }).join('');
+    }
+
+    async renderDashboard() {
+        const stats = await this.fetchStats();
+        const history = await this.fetchHistory();
+        const threats = await this.fetchThreats();
+
+        // Update stats cards
+        document.getElementById('stat-min').textContent = stats.min_count;
+        document.getElementById('stat-max').textContent = stats.max_count;
+        document.getElementById('stat-baseline').textContent = stats.current_avg;
+
+        const uptimeMinutes = Math.floor(stats.uptime / 60);
+        const uptimeSeconds = Math.floor(stats.uptime % 60);
+        document.getElementById('stat-uptime').textContent = `${uptimeMinutes}m ${uptimeSeconds}s`;
+
+        // Draw chart
+        this.drawHistoryChart(history);
+
+        // Render threat log
+        this.renderThreatLog(threats);
+    }
+
+    drawHistoryChart(history) {
+        const canvas = document.getElementById('history-chart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth - 40;
+        canvas.height = 300;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const padding = { top: 20, right: 20, bottom: 40, left: 60 };
+        const chartW = w - padding.left - padding.right;
+        const chartH = h - padding.top - padding.bottom;
+
+        ctx.clearRect(0, 0, w, h);
+
+        if (!history || history.length === 0) {
+            ctx.fillStyle = '#64748b';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data available yet', w / 2, h / 2);
+            return;
+        }
+
+        // Get data ranges
+        const counts = history.map(d => d.count);
+        const baselines = history.map(d => d.baseline);
+        const maxCount = Math.max(...counts, ...baselines, 10);
+        const minCount = Math.min(...counts, ...baselines, 0);
+        const range = maxCount - minCount || 1;
+
+        // Draw background
+        ctx.fillStyle = '#0f1729';
+        ctx.fillRect(padding.left, padding.top, chartW, chartH);
+
+        // Draw grid lines
+        ctx.strokeStyle = '#1e3a5f40';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 5; i++) {
+            const y = padding.top + (chartH / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + chartW, y);
+            ctx.stroke();
+
+            // Y-axis labels
+            const value = Math.round(maxCount - (range / 5) * i);
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(value, padding.left - 10, y + 4);
+        }
+
+        // Draw baseline line
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        history.forEach((point, i) => {
+            const x = padding.left + (chartW / (history.length - 1 || 1)) * i;
+            const y = padding.top + chartH - ((point.baseline - minCount) / range) * chartH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw current count line
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        history.forEach((point, i) => {
+            const x = padding.left + (chartW / (history.length - 1 || 1)) * i;
+            const y = padding.top + chartH - ((point.count - minCount) / range) * chartH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Draw threat color zones
+        history.forEach((point, i) => {
+            const x = padding.left + (chartW / (history.length - 1 || 1)) * i;
+            const y = padding.top + chartH - ((point.count - minCount) / range) * chartH;
+
+            let color;
+            switch(point.color) {
+                case 'green': color = '#10b981'; break;
+                case 'yellow': color = '#f59e0b'; break;
+                case 'orange': color = '#f97316'; break;
+                case 'red': color = '#ef4444'; break;
+                case 'purple': color = '#a855f7'; break;
+                default: color = '#10b981';
+            }
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Legend
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'left';
+
+        ctx.fillStyle = '#00d4ff';
+        ctx.fillRect(padding.left, h - 25, 15, 3);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillText('Current Count', padding.left + 20, h - 20);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(padding.left + 140, h - 25, 15, 3);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillText('Baseline', padding.left + 160, h - 20);
+    }
+
+    renderThreatLog(threats) {
+        const logContainer = document.getElementById('threat-log');
+
+        if (!threats || threats.length === 0) {
+            logContainer.innerHTML = '<div class="empty-state">No threat level changes yet</div>';
+            return;
+        }
+
+        logContainer.innerHTML = threats.reverse().map(threat => {
+            const date = new Date(threat.timestamp * 1000);
+            const timeStr = date.toLocaleTimeString();
+
+            const colorEmoji = {
+                'green': '🟢',
+                'yellow': '🟡',
+                'orange': '🟠',
+                'red': '🔴',
+                'purple': '🟣'
+            };
+
+            return `
+                <div class="threat-log-entry">
+                    <div class="threat-log-time">${timeStr}</div>
+                    <div class="threat-log-change">
+                        ${colorEmoji[threat.old_color]} → ${colorEmoji[threat.new_color]}
+                    </div>
+                    <div class="threat-log-info">
+                        Count: ${threat.count} | Baseline: ${threat.baseline.toFixed(1)} | ${threat.percent > 0 ? '+' : ''}${threat.percent}%
+                    </div>
+                </div>
             `;
         }).join('');
     }

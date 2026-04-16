@@ -13,3 +13,11 @@ class Variables():
 
     live_map  = {}
     war_drive = {}
+
+    # HISTORICAL TRACKING
+    history = []
+    max_history = 500
+    min_count = None
+    max_count = None
+    threat_log = []
+    start_time = None

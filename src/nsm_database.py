@@ -501,10 +501,50 @@ class Extensions():
     def Controller(cls, current_count: int, server_ip: str):
         """This one method will be responbile for calling and handling all methods within this class <--"""
 
+        import time
 
+        if Variables.start_time is None:
+            Variables.start_time = time.time()
 
         average = Extensions._average_ratio(current_count=current_count)
         data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
+
+        current_count_val = data[0]
+        average_ratio = data[1]
+        color = data[2]
+
+        # Track history
+        timestamp = time.time()
+        Variables.history.append({
+            "timestamp": timestamp,
+            "count": current_count_val,
+            "baseline": cls.avg if cls.avg is not None else 0,
+            "color": color,
+            "percent": round(average_ratio * 100, 1)
+        })
+
+        if len(Variables.history) > Variables.max_history:
+            Variables.history.pop(0)
+
+        # Track min/max
+        if Variables.min_count is None or current_count_val < Variables.min_count:
+            Variables.min_count = current_count_val
+        if Variables.max_count is None or current_count_val > Variables.max_count:
+            Variables.max_count = current_count_val
+
+        # Log threat level changes
+        if cls.last_color != color:
+            Variables.threat_log.append({
+                "timestamp": timestamp,
+                "old_color": cls.last_color or "green",
+                "new_color": color,
+                "count": current_count_val,
+                "baseline": cls.avg if cls.avg is not None else 0,
+                "percent": round(average_ratio * 100, 1)
+            })
+
+            if len(Variables.threat_log) > 100:
+                Variables.threat_log.pop(0)
 
         Extensions._tts_google(data=data)
 
