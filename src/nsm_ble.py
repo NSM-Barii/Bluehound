@@ -92,45 +92,44 @@ class BLE_Sniffer():
                 devices = scanner.discovered_devices_and_advertisement_data
 
 
-                if not devices: return
+                if devices: 
                 
-                
-                for mac, (device, adv) in devices.items():
+                    
+                    for mac, (device, adv) in devices.items():
 
-                    name  = adv.local_name or False
-                    rssi  = adv.rssi
-                    uuid  = adv.service_uuids or False
-                    manuf = DataBase._get_manufacturers(manufacturer_hex=adv.manufacturer_data, verbose=False) 
-                    vendor = DataBase._get_vendor_main(mac=mac, verbose=False) 
-                    up_time = time.time()
-                                    
+                        name  = adv.local_name or False
+                        rssi  = adv.rssi
+                        uuid  = adv.service_uuids or False
+                        manuf = DataBase._get_manufacturers(manufacturer_hex=adv.manufacturer_data, verbose=False) 
+                        vendor = DataBase._get_vendor_main(mac=mac, verbose=False) 
+                        up_time = time.time()
+                                        
 
-                    data = {
-                        "rssi": rssi,
-                        "addr": mac,
-                        "manuf": manuf,
-                        "vendor": vendor,
-                        "name": name,
-                        "uuid": uuid,
-                        "up_time": up_time
-                    }
+                        data = {
+                            "rssi": rssi,
+                            "addr": mac,
+                            "manuf": manuf,
+                            "vendor": vendor,
+                            "name": name,
+                            "uuid": uuid,
+                            "up_time": up_time
+                        }
 
 
-                    cls.live_map[mac] = data
+                        cls.live_map[mac] = data
 
-                    if mac not in cls.devices:
-                        
-                        cls.devices.append(mac); cls.num += 1
-                        cls.war_drive[len(cls.devices)] = data
-        
-                        console.print(f"{len(cls.devices)}", rssi, mac, manuf, vendor, name, uuid)
+                        if mac not in cls.devices:
+                            
+                            cls.devices.append(mac); cls.num += 1
+                            cls.war_drive[len(cls.devices)] = data
+            
+                            console.print(f"{len(cls.devices)}", rssi, mac, manuf, vendor, name, uuid)
         
 
 
                 DataBase.push_results(devices=cls.war_drive, verbose=False)
-                with LOCK: 
-                    count = len(cls.devices)
-                    Extensions.Controller(current_count=count, server_ip=server_ip)
+                count = len(cls.live_map)
+                Extensions.Controller(current_count=count, server_ip=server_ip)
 
 
                         

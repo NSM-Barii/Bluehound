@@ -430,18 +430,19 @@ class Extensions():
         elif average_ratio <= 1.0:  color = "red"
         else:                       color = "purple"
         
-
-        try:
-
-            url = f"http://{server_ip}/?color={color}"
-            response = requests.post(url=url, timeout=timeout)
-
-            if response.status_code in [200,204]: 
-                console.print(f"[bold green][+] Successfully pushed:[/bold green] {color} --> {server_ip}  <-->  {url}")
-            
-            else: console.print(f"[bold red][-] Failed to push to LED Server:[bold yellow] Status code: {response.status_code}")
         
-        except Exception as e: console.print(f"[bold red]Exception Error:[bold yellow] {e}")
+        if server_ip:
+            try:
+
+                url = f"http://{server_ip}/?color={color}"
+                response = requests.post(url=url, timeout=timeout)
+
+                if response.status_code in [200,204]: 
+                    console.print(f"[bold green][+] Successfully pushed:[/bold green] {color} --> {server_ip}  <-->  {url}")
+                
+                else: console.print(f"[bold red][-] Failed to push to LED Server:[bold yellow] Status code: {response.status_code}")
+            
+            except Exception as e: console.print(f"[bold red]Exception Error:[bold yellow] {e}")
 
         
         data = [current_count, average_ratio, color]
@@ -504,9 +505,7 @@ class Extensions():
         """This one method will be responbile for calling and handling all methods within this class <--"""
         
 
-
-        if not server_ip: return False
-
+ 
         average = Extensions._average_ratio(current_count=current_count)
         data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
         Extensions._tts_google(data=data)
