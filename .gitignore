@@ -1,5 +1,3 @@
+__pycache__/
 venv/
-esp32*
-*.cpython
-*.pyc
-extensions.json
+database/database.json

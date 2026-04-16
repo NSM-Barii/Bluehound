@@ -12,7 +12,8 @@ import argparse
 
 
 # NSM MODULES
-from nsm_mesh_finder import BLE_Sniffer
+from nsm_vars import Variables
+from nsm_ble import BLE_Sniffer
 from nsm_database import DataBase
 
 
@@ -28,25 +29,18 @@ class Main_Menu():
 
 
    # parser.add_argument("-h", help="Display help, usage info, and project banner")
-    parser.add_argument("-w", action="store_true", help="BLE Wardriving along with automatic data saving")
-    parser.add_argument("-wv", action="store_true", help="BLE Wardriivng with command output")
-
+    parser.add_argument("-save", action="store_true", help="BLE Wardriivng with command output")
     parser.add_argument("-s", help="Server IP for led lights")
 
 
 
     args = parser.parse_args()
-    
-
-    # WAR DRIVING
-    war       = args.w
-    war_v     = args.wv
-    server_ip = args.s
+    Variables.server_ip = args.s
+    Variables.file_saving = args.save
 
 
-    if  war or war_v: 
-        console.print(f"[*] Mode: BLE Wardriving  -  Server IP: {server_ip}")
-        BLE_Sniffer.main(war_drive=war, print=war_v, server_ip=server_ip); exit()
+    console.print(f"[*] Mode: BLE Wardriving  -  Server IP: {Variables.server_ip}")
+    BLE_Sniffer.main()
 
 
 
