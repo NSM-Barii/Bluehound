@@ -460,15 +460,16 @@ class Extensions():
         current_count = data[0]
         average_ratio = data[1]
         color         = data[2]
+        percent       = abs(average_ratio * 100)
 
         valid = ["green", "yellow", "orange", "red", "purple"]
         
         if cls.last_count < current_count:
-            say = f"[bold green][UP] ATTENTION, the amount of devices in your area has increased from {cls.last_count} to {current_count}. up {average_ratio} percent!"
-        
+            say = f"[bold green][UP] ATTENTION, the amount of devices in your area has increased from {cls.last_count} to {current_count}. up {percent} percent!"
+
         elif cls.last_count > current_count:
-            say = f"[bold red][DOWN] ATTENTION, the amount of devices in your area has decreased from {cls.last_count} to {current_count}. down {average_ratio} percent!"
-        
+            say = f"[bold red][DOWN] ATTENTION, the amount of devices in your area has decreased from {cls.last_count} to {current_count}. down {percent} percent!"
+
         else: return
 
 
