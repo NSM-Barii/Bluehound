@@ -370,14 +370,15 @@ class BLEScanner {
         const baseline = document.getElementById('threat-baseline');
 
         if (badge && percent && baseline) {
-            // Update color class
-            badge.className = 'stat threat-badge';
-            badge.classList.add(`threat-${this.currentStatus.color}`);
-
             // Calculate actual percent change
             const actualPercent = this.currentStatus.baseline > 0
                 ? ((this.currentStatus.current_count - this.currentStatus.baseline) / this.currentStatus.baseline * 100).toFixed(1)
                 : 0;
+
+            // Update color class - red if negative, otherwise use backend color
+            badge.className = 'stat threat-badge';
+            const displayColor = actualPercent < 0 ? 'red' : this.currentStatus.color;
+            badge.classList.add(`threat-${displayColor}`);
 
             const sign = actualPercent > 0 ? '+' : '';
             percent.textContent = `${sign}${actualPercent}%`;
