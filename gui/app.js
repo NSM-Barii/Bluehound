@@ -31,6 +31,7 @@ class BLEScanner {
     constructor() {
         this.devices = new Map();
         this.allDevices = new Set();
+        this.wardrivingDevices = new Map();
         this.signalHistory = new Map();
         this.kalmanFilters = new Map();
         this.canvas = document.getElementById('radar-canvas');
@@ -121,6 +122,26 @@ class BLEScanner {
         } catch (error) {
             console.error('Fetch error:', error);
             return {};
+        }
+    }
+
+    async fetchWardriving() {
+        try {
+            const response = await fetch('/api/wardriving');
+            return await response.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return {};
+        }
+    }
+
+    async fetchStatus() {
+        try {
+            const response = await fetch('/api/status');
+            return await response.json();
+        } catch (error) {
+            console.error('Fetch error:', error);
+            return { current_count: 0, baseline: 0, color: 'green', percent: 0 };
         }
     }
 
@@ -219,7 +240,11 @@ class BLEScanner {
 
     async update() {
         const data = await this.fetchDevices();
+        const wardrivingData = await this.fetchWardriving();
+        const status = await this.fetchStatus();
         const now = Date.now() / 1000;
+
+        this.currentStatus = status;
 
         // Track all devices
         Object.keys(data).forEach(mac => this.allDevices.add(mac));
@@ -252,18 +277,60 @@ class BLEScanner {
             }
         }
 
+        // Update wardriving devices (all historical devices)
+        for (const [mac, info] of Object.entries(wardrivingData)) {
+            const uptime = info.up_time || 0;
+            const rssi = info.rssi || -100;
+            const distanceInfo = this.calculateDistance(rssi);
+            const manufacturer = info.manuf || 'Unknown';
+
+            this.wardrivingDevices.set(mac, {
+                mac,
+                name: info.name || 'Unknown Device',
+                manufacturer,
+                vendor: info.vendor || 'Unknown',
+                rssi,
+                uuid: Array.isArray(info.uuid) ? info.uuid.join(', ') : (info.uuid || 'None'),
+                uptime,
+                age: now - uptime,
+                ...distanceInfo
+            });
+        }
+
         this.render();
     }
 
     render() {
         this.updateStats();
+        this.updateStatusBadge();
         this.renderRadar();
         this.renderDeviceList();
     }
 
     updateStats() {
         document.getElementById('active-count').textContent = this.devices.size;
-        document.getElementById('total-count').textContent = this.allDevices.size;
+        document.getElementById('total-count').textContent = this.wardrivingDevices.size;
+    }
+
+    updateStatusBadge() {
+        if (!this.currentStatus) return;
+
+        const badge = document.getElementById('threat-badge');
+        const percent = document.getElementById('threat-percent');
+        const baseline = document.getElementById('threat-baseline');
+
+        if (badge && percent && baseline) {
+            // Update color class
+            badge.className = 'stat threat-badge';
+            badge.classList.add(`threat-${this.currentStatus.color}`);
+
+            // Update percent text
+            const sign = this.currentStatus.percent > 0 ? '+' : '';
+            percent.textContent = `${sign}${this.currentStatus.percent}%`;
+
+            // Update baseline text
+            baseline.textContent = `Baseline: ${this.currentStatus.current_count}`;
+        }
     }
 
     renderRadar() {
@@ -451,7 +518,7 @@ class BLEScanner {
 
     renderTable() {
         const tbody = document.getElementById('table-body');
-        let devices = Array.from(this.devices.values());
+        let devices = Array.from(this.wardrivingDevices.values());
 
         // Filter by search
         if (this.tableSearchTerm) {

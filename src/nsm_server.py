@@ -13,6 +13,7 @@ import json, os; from pathlib import Path
 
 # NSM IMPORTS
 from nsm_vars import Variables
+from nsm_database import Extensions
 
 
 
@@ -49,7 +50,17 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", '*')
             self.end_headers()
 
-            self.wfile.write(json.dumps(war_drive).encode())
+            self.wfile.write(json.dumps(live_map).encode())
+
+        elif self.path == "/api/status":
+
+            self.send_response(200)
+            self.send_header("content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", '*')
+            self.end_headers()
+
+            status = Extensions.get_status()
+            self.wfile.write(json.dumps(status).encode())
 
         else: super().do_GET()
 

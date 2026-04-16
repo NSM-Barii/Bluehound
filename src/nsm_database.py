@@ -503,12 +503,22 @@ class Extensions():
     @classmethod
     def Controller(cls, current_count: int, server_ip: str):
         """This one method will be responbile for calling and handling all methods within this class <--"""
-        
 
- 
+
+
         average = Extensions._average_ratio(current_count=current_count)
         data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
         Extensions._tts_google(data=data)
+
+    @classmethod
+    def get_status(cls):
+        """Return current threat status for web API"""
+        return {
+            "current_count": cls.last_count,
+            "baseline": round(cls.avg, 2) if cls.avg is not None else 0,
+            "color": cls.last_color or "green",
+            "percent": round(abs(((cls.last_count - (cls.avg or 0)) / (cls.avg or 1)) * 100), 1) if cls.avg else 0
+        }
 
 
 if __name__ == "__main__":
