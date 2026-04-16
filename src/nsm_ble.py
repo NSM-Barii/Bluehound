@@ -128,7 +128,7 @@ class BLE_Sniffer():
 
 
                 DataBase.push_results(devices=cls.war_drive, verbose=False)
-                count = len(cls.live_map)
+                count = len(devices)
                 Extensions.Controller(current_count=count, server_ip=server_ip)
 
 
