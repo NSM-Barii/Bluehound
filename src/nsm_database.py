@@ -4,7 +4,7 @@
 
 
 # IMPORTS
-import manuf, json, os, threading, subprocess, requests
+import manuf, json, os, threading, subprocess, requests, time
 from gtts import gTTS
 from pathlib import Path
 from mac_vendor_lookup import MacLookup #vendors = MacLookup().load_vendors()
@@ -398,7 +398,6 @@ class Extensions():
         return round(score, 3)
 
         
-
     @classmethod
     def _change_color(cls, current_count, average_ratio, server_ip, timeout=3):
         """This will send push a http --> ESP32"""
@@ -449,8 +448,6 @@ class Extensions():
         return data
         
 
-
-
     @classmethod
     def _tts_google(cls, data=False, verbose=True):
         """This will be responsible for pushing sound to --> Yoda Audio player"""
@@ -474,27 +471,80 @@ class Extensions():
 
         if color in valid and cls.last_count != current_count:
 
+            pass
             if verbose: console.print(say)
             #console.print(f"{cls.last_color} --> {color}")
             #console.print(f"{cls.last_count} --> {current_count}")
 
         
-
-
     @classmethod
     def Controller(cls, current_count: int, server_ip: str):
         """This one method will be responbile for calling and handling all methods within this class <--"""
 
-        
 
-        average = cls._average_ratio(current_count=current_count)
-        data    = cls._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
+        if Variables.start_time is None: Variables.start_time = time.time()
+
+
+        average = Extensions._average_ratio(current_count=current_count)
+        data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
+
+        current_count_val = data[0]
+        average_ratio = data[1]
+        color = data[2]
+        timestamp = time.time()
+
+
+        Variables.history.append({
+            "timestamp": timestamp,
+            "count": current_count_val,
+            "baseline": cls.avg if cls.avg is not None else 0,
+            "color": color,
+            "percent": round(average_ratio * 100, 1)
+        })
+
+
+
+
+
+        if len(Variables.history) > Variables.max_history:Variables.history.pop(0)
+        if Variables.min_count is None or current_count_val < Variables.min_count:Variables.min_count = current_count_val
+        if Variables.max_count is None or current_count_val > Variables.max_count: Variables.max_count = current_count_val
+
+
+
+        if cls.last_color != color:
+
+
+            Variables.threat_log.append({
+                "timestamp": timestamp,
+                "old_color": cls.last_color or "green",
+                "new_color": color,
+                "count": current_count_val,
+                "baseline": cls.avg if cls.avg is not None else 0,
+                "percent": round(average_ratio * 100, 1)
+            })
+
+
+            if len(Variables.threat_log) > 100: Variables.threat_log.pop(0)
+
 
         cls._tts_google(data=data)
-
         cls.last_count = data[0]
         cls.last_color = data[2]
 
+
+
+    @classmethod
+    def get_status(cls):
+        """Return current threat status for web API"""
+
+
+        return {
+            "current_count": cls.last_count,
+            "baseline": round(cls.avg, 2) if cls.avg is not None else 0,
+            "color": cls.last_color or "green",
+            "percent": round(abs(((cls.last_count - (cls.avg or 0)) / (cls.avg or 1)) * 100), 1) if cls.avg else 0
+        }
 
 
 if __name__ == "__main__":

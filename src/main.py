@@ -31,8 +31,8 @@ class Main_Menu():
 
    # parser.add_argument("-h", help="Display help, usage info, and project banner")
     #parser.add_argument("--mode", choices=["sniffer", "monitor"], help="This will be used to choose the mode option")
-    parser.add_argument("-sniffer", action="store_true", help="BLE Wardriving")
-    parser.add_argument("-monitor", action="store_true", help="This is for IDS SUpervision of surruonds")
+    parser.add_argument("-sniffer", action="store_true", help="Sniffer Mode: Scan and log nearby BLE devices (wardriving / reconnaissance)")
+    parser.add_argument("-monitor", action="store_true", help="Monitor Mode: Analyze BLE environment for anomalies (unstable devices, signal drops, interference)")
     parser.add_argument("-save", action="store_true", help="BLE Wardriivng with command output")
     parser.add_argument("-s", help="Server IP for led lights")
 
@@ -45,7 +45,7 @@ class Main_Menu():
     Variables.file_saving = args.save
 
 
-    console.print(f"[*] Mode: BLE Wardriving  -  Server IP: {Variables.server_ip}")
+    #console.print(f"[*] Mode: BLE Wardriving  -  Server IP: {Variables.server_ip}")
     
     
     BLE_Sniffer.main()
