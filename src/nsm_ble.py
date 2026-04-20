@@ -48,17 +48,23 @@ class BLE_Sniffer():
     
     
 
-    @staticmethod
-    def _get_manuf(manuf):
+    @classmethod
+    def _get_manuf(cls, manuf):
         """This will parse and get manuf"""
 
 
-        data = {}
+    
+        if not manuf: return False
 
         for key, value in manuf.items():
-            data[key] = value.hex()
+            id = key; hex = value.hex()
+        
 
-        return data
+
+        company = DataBase.get_manufacturer(id=id, data=hex)
+
+
+        return company
 
 
 
@@ -103,8 +109,8 @@ class BLE_Sniffer():
                         name  = adv.local_name or False
                         rssi  = adv.rssi
                         uuid  = adv.service_uuids or False
-                        manuf = DataBase._get_manufacturers(manufacturer_hex=adv.manufacturer_data, verbose=False) 
-                        vendor = DataBase._get_vendor_main(mac=mac, verbose=False) 
+                        manuf = cls._get_manuf(manuf=adv.manufacturer_data) 
+                        vendor = DataBase.get_vendor_main(mac=mac, verbose=False) 
                         up_time = time.time()
                                         
 

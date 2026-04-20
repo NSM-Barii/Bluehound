@@ -3,8 +3,6 @@
 
 
 # UI IMPORTS
-from rich.console import Console
-console = Console()
 
 
 # IMPORTS
@@ -17,7 +15,9 @@ from mac_vendor_lookup import MacLookup #vendors = MacLookup().load_vendors()
 # NSM IMPORTS
 from nsm_vars import Variables
 
-LOCK = threading.Lock()
+
+console = Variables.console
+LOCK = Variables.LOCK
 
 
 class DataBase():
@@ -213,38 +213,39 @@ class DataBase():
                 return value
             
 
-    @classmethod
-    def _get_manufacturers(cls, manufacturer_hex, verbose=True) -> str:
-        """Manufacturer ID --> Manufacturer / Vendor"""
-
- 
-        if not manufacturer_hex: return "N/A"
+    @staticmethod
+    def get_manufacturer(id, data, verbose=False) -> str:
+        """This will convert manuf data -> manuf"""
 
 
-        data = {}
-        for key, value in manufacturer_hex.items():
-            id = key; data = DataBase._get_etc(data=value.hex()) or value.hex()
+
+        try:
+
+            path = Path(__file__).parent.parent / "database" / "bluetooth_sig" / "assigned_numbers" / "company_identifiers" / "company_ids.json"
+            
+            if not path.exists(): console.print("[bold red][-] Database Error: BLE path doesnt exist"); return False
             
 
-        company_ids = DataBase._importer(file_path=cls.company_ids_path, verbose=False)
+            with open(str(path), "r") as file:
+                company_ids = json.load(file)
+    
+
+            for key, value in company_ids.items():
+
+                if int(key) == int(id):
+
+                    manufacturer = value["company"]
+
+                    if verbose: console.print(f"[bold green][+] {id} --> {manufacturer}")
+                    
+                    #if data: return f"{manufacturer} | {data}"
+                    return manufacturer
+            
+            return False
 
 
-        for key, value in company_ids.items():
 
-            if int(key) == int(id):
-
-                manufacturer = value["company"]
-
-                if verbose: console.print(f"[bold green][+] {id} --> {manufacturer}")
-                
-                if data: return f"{manufacturer} | {data}"
-                return manufacturer
-        
-        return False
-
-
-
-        pass
+        except Exception as e: console.print(f"[bold red][-] Database Exception Error:[bold yellow] {e}")
 
 
     @classmethod
@@ -309,7 +310,7 @@ class DataBase():
     
 
     @staticmethod
-    def _get_vendor_main(mac: str, verbose=False) -> str:
+    def get_vendor_main(mac: str, verbose=False) -> str:
         """This will use ringmast4r and wireshark vendor database"""
 
 
@@ -370,6 +371,7 @@ class DataBase():
 
                           
             except Exception as e: console.print(f"[bold red][!] Exception Error:[bold yellow] {e}")
+
 
 
 class Extensions():
@@ -475,25 +477,9 @@ class Extensions():
         if color in valid and cls.last_count != current_count:
 
             if verbose: console.print(say)
-            console.print(f"{cls.last_color} --> {color}")
-            console.print(f"{cls.last_count} --> {current_count}")
+            #console.print(f"{cls.last_color} --> {color}")
+            #console.print(f"{cls.last_count} --> {current_count}")
 
-            if not cls.drive_error:
-                
-                try:
-
-                    tts = gTTS(say)
-                    path = str(Path(__file__).parent / "output.mp3")
-                    tts.save(path)
-
-                    if not os.path.exists(path=path): console.print(f"[bold red]File NOT Found Error!!!")
-
-                    subprocess.run(["yoda-audio", path], check=False)
-                    if verbose: console.print("[bold green]File --> yoda-audio!")
-                
-
-                except Exception as e: console.print(f"[bold red]Exception Error:[bold yellow] {e}")
-                cls.drive_error = True
         
 
 
@@ -501,65 +487,16 @@ class Extensions():
     def Controller(cls, current_count: int, server_ip: str):
         """This one method will be responbile for calling and handling all methods within this class <--"""
 
-        import time
+        
 
-        if Variables.start_time is None:
-            Variables.start_time = time.time()
+        average = cls._average_ratio(current_count=current_count)
+        data    = cls._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
 
-        average = Extensions._average_ratio(current_count=current_count)
-        data  = Extensions._change_color(current_count=current_count, average_ratio=average, server_ip=server_ip)
-
-        current_count_val = data[0]
-        average_ratio = data[1]
-        color = data[2]
-
-        # Track history
-        timestamp = time.time()
-        Variables.history.append({
-            "timestamp": timestamp,
-            "count": current_count_val,
-            "baseline": cls.avg if cls.avg is not None else 0,
-            "color": color,
-            "percent": round(average_ratio * 100, 1)
-        })
-
-        if len(Variables.history) > Variables.max_history:
-            Variables.history.pop(0)
-
-        # Track min/max
-        if Variables.min_count is None or current_count_val < Variables.min_count:
-            Variables.min_count = current_count_val
-        if Variables.max_count is None or current_count_val > Variables.max_count:
-            Variables.max_count = current_count_val
-
-        # Log threat level changes
-        if cls.last_color != color:
-            Variables.threat_log.append({
-                "timestamp": timestamp,
-                "old_color": cls.last_color or "green",
-                "new_color": color,
-                "count": current_count_val,
-                "baseline": cls.avg if cls.avg is not None else 0,
-                "percent": round(average_ratio * 100, 1)
-            })
-
-            if len(Variables.threat_log) > 100:
-                Variables.threat_log.pop(0)
-
-        Extensions._tts_google(data=data)
+        cls._tts_google(data=data)
 
         cls.last_count = data[0]
         cls.last_color = data[2]
 
-    @classmethod
-    def get_status(cls):
-        """Return current threat status for web API"""
-        return {
-            "current_count": cls.last_count,
-            "baseline": round(cls.avg, 2) if cls.avg is not None else 0,
-            "color": cls.last_color or "green",
-            "percent": round(abs(((cls.last_count - (cls.avg or 0)) / (cls.avg or 1)) * 100), 1) if cls.avg else 0
-        }
 
 
 if __name__ == "__main__":
