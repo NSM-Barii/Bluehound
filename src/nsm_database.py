@@ -2,10 +2,6 @@
 
 
 
-# UI IMPORTS
-from rich.console import Console
-console = Console()
-
 
 # IMPORTS
 import manuf, json, os, threading, subprocess, requests
@@ -17,7 +13,9 @@ from mac_vendor_lookup import MacLookup #vendors = MacLookup().load_vendors()
 # NSM IMPORTS
 from nsm_vars import Variables
 
-LOCK = threading.Lock()
+
+console = Variables.console
+LOCK =    Variables.LOCK
 
 
 class DataBase():
