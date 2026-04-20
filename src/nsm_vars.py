@@ -1,10 +1,23 @@
 # THIS WILL HOLD MODULE WIDE VARS
 
 
+# UI IMPORTS
+from rich.table import Table
+from rich.live import Live
+from rich.panel import Panel
+from rich.console import Console
+
+
+# ETC IMPORTS
+import threading
 
 
 class Variables():
     """This will house variables"""
+
+    # CONSTANTS
+    console = Console()
+    LOCK = threading.RLock()
 
 
 
