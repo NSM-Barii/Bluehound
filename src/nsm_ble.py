@@ -154,6 +154,9 @@ class BLE_Sniffer():
     @classmethod
     def main(cls):
         """Run from here"""
+
+
+        if not Variables.sniffer: return False
         
 
         cls.devices = []
@@ -166,7 +169,7 @@ class BLE_Sniffer():
 
         try:
 
-
+            console.print("[yellow][+] Bluetooth Sniffer Activated")
             threading.Thread(target=Web_Server.start, args=(console, ), daemon=True).start(); time.sleep(1)
             asyncio.run(BLE_Sniffer._ble_printer(server_ip=server_ip))
     

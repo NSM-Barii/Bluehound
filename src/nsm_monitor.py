@@ -200,6 +200,13 @@ class Monitor_Bluetooth():
                                     console.print(f"removed: {mac}") 
 
 
+
+                        """
+                        Proverbs 27:17 As iron sharpens iron, so a friend sharpens another.
+                        """
+
+
+
                         if time_missing > 30:
                             console.print(f"[bold yellow][-] Removing stale device:[/bold yellow] {mac}")
                             del cls.live_map[mac]
@@ -242,7 +249,7 @@ class Monitor_Bluetooth():
                     """
 
                     c1 = "bold yellow"
-                    panel.renderable = (f"Session Devices:[{c1}] {total}[/{c1}]  -  Unstable Devices:[{c1}] {unstables}[/{c1}]  -  Unstable Ratio:[{c1}] {unstable_pct}[/{c1}]   -  Drop Score:[{c1}] {drop_score}[/{c1}]")
+                    panel.renderable = (f"Session Devices:[{c1}] {total}[/{c1}]  -  Unstable Devices:[{c1}] {unstables}[/{c1}]  -  Unstable Ratio:[{c1}] {unstable_pct}[/{c1}]   -  Drop Score:[{c1}] {drop_pct}[/{c1}]")
 
 
 
@@ -255,6 +262,9 @@ class Monitor_Bluetooth():
     @classmethod
     def main(cls):
         """Run from here"""
+
+
+        if not Variables.monitor: return False
         
 
         cls.devices = 0
@@ -266,7 +276,7 @@ class Monitor_Bluetooth():
 
         try: 
             
-            console.print("[yellow][+] Bluetooth/BLE Monitoring Active")
+            console.print("[yellow][+] Bluetooth/BLE Monitoring Activated")
             asyncio.run(cls._ble_printer(server_ip=server_ip))
     
         except KeyboardInterrupt: console.print("\n[bold red]Stopping....")

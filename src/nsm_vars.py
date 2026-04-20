@@ -15,10 +15,14 @@ import threading
 class Variables():
     """This will house variables"""
 
+
+    # MODES
+    sniffer = False
+    monitor = False
+
     # CONSTANTS
     console = Console()
     LOCK = threading.RLock()
-
 
 
     server_ip   = False
