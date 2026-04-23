@@ -15,7 +15,7 @@ from bleak import BleakClient, BleakScanner
 
 
 # ETC IMPORTS
-import asyncio, time, time
+import asyncio, time, time, statistics
 from datetime import datetime
 
 
@@ -82,9 +82,8 @@ class Monitor_Bluetooth():
         c4 = "bold red"
         c5 = "bold blue"
         table = ""
-        timeout = 10
         cycle = 0
-        unstable_devices = []
+        unstable_devices = set()
         panel = Panel(renderable="Developed by nsm_barii", style="bold red", border_style="bold purple", expand=False)
 
         table = Table(title="BLE Driving", title_style="bold red", border_style="bold purple", style="bold purple", header_style="bold red")
@@ -139,9 +138,7 @@ class Monitor_Bluetooth():
                                     "status": "stable",
                                     "data": data,
                                     "rssi_list": [],
-                                    "cycle": cycle,
-                                    "unstable_d": 0,
-                                    "stable_count": 0,
+                                    "unstable_hits": 0,
                                     "seen_cycles": 1,
                                     "first_seen": now,
                                     "last_seen": now
@@ -160,7 +157,7 @@ class Monitor_Bluetooth():
 
                     for mac, dev in list(cls.live_map.items()):
                             
-                        use = f"[bold red][!] {mac} ->"
+                        use = f"[dim][>] {mac} ->"
                         weight       = 0
                         rssi_list    = dev["rssi_list"]
                         time_missing = now - dev["last_seen"]
@@ -169,35 +166,40 @@ class Monitor_Bluetooth():
                         
                         # // C++ IS SUPERIOR
                         if len(rssi_list) >= 3 and max(rssi_list) - min(rssi_list) > 30: 
-                            weight  += 1
+                            weight += 1
                             console.print(f"{use}[yellow] rssi spike")
 
-                        if dev["cycle"] != cycle: 
-                            weight  += 1
-                            console.print(f"{use}[yellow] missed cycle")
+                        if (time_missing > 5): 
+                            weight += 1
+                            #console.print(f"{use}[yellow] short time gap")
 
                         if (time_missing > 10): 
-                            weight  += 2
-                            console.print(f"{use}[yellow] missing time")
-                        
+                            weight += 2
+                            console.print(f"{use}[yellow] long time gap")
 
-                        if weight >= 2:
-                            if mac not in unstable_devices: 
-                                unstable_devices.append(mac)
-                            dev["status"]       = "unstable"
-                            dev["stable_count"] = 0
-                            dev["unstable_d"]   += 1
 
-                            if dev["unstable_d"] > 15:
-                                unstable_devices.pop(mac)
-                            
+                        if (weight >= 2): dev["unstable_hits"] += 1
+                        else:           
+                            if dev["unstable_hits"] > 0:
+                                dev["unstable_hits"] -= 1
+
+
+                        if (dev["unstable_hits"] >= 2):
+                            if dev["status"] != "unstable":
+                                console.print(f"[bold red][!] Unstable Device:[yellow] {mac}")
+                                unstable_devices.add(mac)
+                                dev["status"] = "unstable"
+                                dev["stable_count"] = 0
+
                         else: 
-                            if dev["status"] == "unstable":
+                            if (dev["status"] == "unstable"):
                                 dev["stable_count"] += 1
-                                if dev["stable_count"] >= 1: 
+
+                                if (dev["stable_count"] >= 2): 
                                     dev["status"] = "stable"
-                                    unstable_devices.remove(mac)
-                                    console.print(f"removed: {mac}") 
+                                    dev["stable_count"] = 0
+                                    unstable_devices.discard(mac)
+                                    console.print(f"[bold green][+] Device now stable:[yellow] {mac}")
 
 
 
@@ -209,6 +211,7 @@ class Monitor_Bluetooth():
 
                         if time_missing > 30:
                             console.print(f"[bold yellow][-] Removing stale device:[/bold yellow] {mac}")
+                            unstable_devices.discard(mac)
                             del cls.live_map[mac]
 
 
@@ -219,38 +222,27 @@ class Monitor_Bluetooth():
                     # WILL MAKE A GLOBALIZED SAVE FOR ALL INFO FROM ALL MONITOR METHODS
                     # DataBase.push_results(devices=cls.war_drive, verbose=False)
 
-                    
-                    count = len(devices if devices else 0)
+                                        
+                    count = len(devices) if devices else 0
                     Extensions.Controller(current_count=count, server_ip=server_ip)
-                    avg   = Extensions.avg
-                    total = len(cls.live_map) or 0
-                    unstables = len(unstable_devices)
-                    
+
+                    avg       = Extensions.avg or 1
+                    total     = len(cls.live_map) or 1
+                    unstables = len({mac for mac in unstable_devices if mac in cls.live_map})
 
                     unstable_ratio = unstables / total
-                    drop_score     = (avg - count) / avg  
+                    drop_score     = (avg - count) / avg if avg else 0
 
                     unstable_pct = round(unstable_ratio * 100, 2)
                     drop_pct     = round(drop_score * 100, 2)
 
-
-
-                    t = unstables - total
-            
-                
-                    
-                    """
-                    console.print(
-                        f"Unstable devices: {unstables} "
-                        f"\nTotal Devices: {total}"
-                        f"\nUnstable_ratio: {unstable_pct} - Drop_score: {drop_pct}"
-                    )
-                    
-                    """
-
                     c1 = "bold yellow"
-                    panel.renderable = (f"Session Devices:[{c1}] {total}[/{c1}]  -  Unstable Devices:[{c1}] {unstables}[/{c1}]  -  Unstable Ratio:[{c1}] {unstable_pct}[/{c1}]   -  Drop Score:[{c1}] {drop_pct}[/{c1}]")
-
+                    panel.renderable = (
+                        f"Session Devices:[{c1}] {total}[/{c1}]  -  "
+                        f"Unstable Devices:[{c1}] {unstables}[/{c1}]  -  "
+                        f"Unstable Ratio:[{c1}] {unstable_pct}%[/{c1}]  -  "
+                        f"Drop Score:[{c1}] {drop_pct}%[/{c1}]"
+                    )
 
 
 

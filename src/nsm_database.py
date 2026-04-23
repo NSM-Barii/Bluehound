@@ -460,11 +460,12 @@ class Extensions():
 
         valid = ["green", "yellow", "orange", "red", "purple"]
         
+
         if cls.last_count < current_count:
-            say = f"[bold green][UP] ATTENTION, the amount of devices in your area has increased from {cls.last_count} to {current_count}. up {percent} percent!"
+            say = f"[bold green][UP] Device surge detected:[/bold green] {cls.last_count} → {current_count} (+{percent}%)"
 
         elif cls.last_count > current_count:
-            say = f"[bold red][DOWN] ATTENTION, the amount of devices in your area has decreased from {cls.last_count} to {current_count}. down {percent} percent!"
+            say = f"[bold red][DOWN] Device drop detected:[/bold red] {cls.last_count} → {current_count} (-{percent}%)"
 
         else: return
 

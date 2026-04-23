@@ -22,7 +22,7 @@ class Variables():
 
     # CONSTANTS
     console = Console()
-    LOCK = threading.RLock()
+    LOCK    = threading.RLock()
 
 
     server_ip   = False
