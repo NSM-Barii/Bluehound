@@ -15,12 +15,13 @@ from bleak import BleakClient, BleakScanner
 
 
 # ETC IMPORTS
-import asyncio, time, time, statistics
+import asyncio, time, time, statistics, threading
 from datetime import datetime
 
 
 # NSM IMPORTS
 from nsm_vars import Variables
+from nsm_server import Web_Server
 from nsm_database import DataBase, Extensions
 
 
@@ -83,6 +84,8 @@ class Monitor_Bluetooth():
         c5 = "bold blue"
         table = ""
         cycle = 0
+        window   = Variables.scan_window
+        interval = Variables.scan_interval
         unstable_devices = set()
         panel = Panel(renderable="Developed by nsm_barii", style="bold red", border_style="bold purple", expand=False)
 
@@ -100,7 +103,7 @@ class Monitor_Bluetooth():
 
 
                     await scanner.start()
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(window)
                     await scanner.stop()
                     devices = scanner.discovered_devices_and_advertisement_data
                     now     = time.time()
@@ -245,6 +248,10 @@ class Monitor_Bluetooth():
                     )
 
 
+                    # WAIT BETWEEN SCANS (0 = CONTINUOUS)
+                    if interval: await asyncio.sleep(interval)
+
+
 
         except KeyboardInterrupt as e:  console.print(f"[bold red][!] BLE Keyboard Exception Error:[bold yellow] {e}")
         except Exception as e:     console.print(f"[bold red][!] BLE Exception Error:[bold yellow] {e}")
@@ -266,9 +273,13 @@ class Monitor_Bluetooth():
         cls.live_map = Variables.live_map
 
 
-        try: 
-            
+        try:
+
             console.print("[yellow][+] Bluetooth/BLE Monitoring Activated")
+
+            if Variables.web:
+                threading.Thread(target=Web_Server.start, args=(console, ), daemon=True).start(); time.sleep(1)
+
             asyncio.run(cls._ble_printer(server_ip=server_ip))
     
         except KeyboardInterrupt: console.print("\n[bold red]Stopping....")

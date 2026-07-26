@@ -80,6 +80,8 @@ class BLE_Sniffer():
         c5 = "bold blue"
         table = ""
         timeout = 10
+        window   = Variables.scan_window
+        interval = Variables.scan_interval
 
         table = Table(title="BLE Driving", title_style="bold red", border_style="bold purple", style="bold purple", header_style="bold red")
         table.add_column("#"); table.add_column("RSSI", style=c2); table.add_column("Mac", style=c3); table.add_column("Manufacturer", style=c5); table.add_column("Local_name"); table.add_column("UUID", style=c3)
@@ -92,7 +94,7 @@ class BLE_Sniffer():
             while 0 < timeout:
 
                 await scanner.start()
-                await asyncio.sleep(5)
+                await asyncio.sleep(window)
                 await scanner.stop()
                 devices = scanner.discovered_devices_and_advertisement_data
 
@@ -141,6 +143,10 @@ class BLE_Sniffer():
                 Extensions.Controller(current_count=count, server_ip=server_ip)
 
 
+                # WAIT BETWEEN SCANS (0 = CONTINUOUS)
+                if interval: await asyncio.sleep(interval)
+
+
                         
 
             console.print(f"\n[bold green][+] Found a total of:[bold yellow] {len(cls.devices)} devices")
@@ -170,7 +176,10 @@ class BLE_Sniffer():
         try:
 
             console.print("[yellow][+] Bluetooth Sniffer Activated")
-            threading.Thread(target=Web_Server.start, args=(console, ), daemon=True).start(); time.sleep(1)
+
+            if Variables.web:
+                threading.Thread(target=Web_Server.start, args=(console, ), daemon=True).start(); time.sleep(1)
+
             asyncio.run(BLE_Sniffer._ble_printer(server_ip=server_ip))
     
         

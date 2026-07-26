@@ -20,6 +20,13 @@ class Variables():
     sniffer = False
     monitor = False
 
+    # LAUNCH LIVE WEB DASHBOARD
+    web = False
+
+    # SCAN TIMING
+    scan_window   = 5   # HOW LONG EACH SCAN LISTENS
+    scan_interval = 0   # HOW LONG TO WAIT BETWEEN SCANS (0 = CONTINUOUS)
+
     # CONSTANTS
     console = Console()
     LOCK    = threading.RLock()

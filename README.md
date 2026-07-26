@@ -83,12 +83,23 @@ pip install -r ../requirements.txt
 
 ### Sniffer Mode
 ```bash
-sudo venv/bin/python main.py -sniffer
+sudo venv/bin/python main.py --sniffer
 ```
 
 ### Monitor Mode
 ```bash
-sudo venv/bin/python main.py -monitor
+sudo venv/bin/python main.py --monitor
+```
+
+---
+
+### Live Web Dashboard
+
+Add `--web` to either mode to launch the real-time dashboard (radar + device table) at `http://localhost:8000`:
+
+```bash
+sudo venv/bin/python main.py --monitor --web
+sudo venv/bin/python main.py --sniffer --web
 ```
 
 ---
@@ -96,8 +107,17 @@ sudo venv/bin/python main.py -monitor
 ### Optional Flags
 
 ```bash
--save        # Save scan results
--s <IP>      # Send data to external server (ESP32 / LED system)
+--save             # Save scan results
+-s <IP>            # Send data to external server (ESP32 / LED system)
+--web              # Launch live web dashboard at http://localhost:8000
+--window <sec>     # How long each scan listens for advertisements (default: 5)
+--interval <sec>   # Wait time between scans; 0 = continuous (default: 0)
+```
+
+Example — 8s scan window with a 3s pause between scans, plus the dashboard:
+
+```bash
+sudo venv/bin/python main.py --monitor --web --window 8 --interval 3
 ```
 
 ---

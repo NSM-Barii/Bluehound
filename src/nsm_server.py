@@ -26,6 +26,29 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
         """Silence HTTP server logs"""
         pass
 
+    @staticmethod
+    def _normalize(live_map) -> dict:
+        """Flatten device entries so the GUI reads one shape.
+
+        The sniffer stores flat entries (rssi/manuf/up_time/...), while the
+        monitor nests them under a 'data' key and tracks 'last_seen' instead of
+        'up_time'. The frontend expects the flat sniffer shape, so unwrap the
+        monitor's structure here.
+        """
+
+        out = {}
+
+        for mac, entry in live_map.items():
+
+            if isinstance(entry, dict) and "data" in entry:
+                flat = dict(entry["data"])
+                flat["up_time"] = entry.get("last_seen") or entry.get("first_seen") or 0
+                out[mac] = flat
+            else:
+                out[mac] = entry
+
+        return out
+
     def do_GET(self) -> None:
         """This will handle basic web server requests"""
 
@@ -40,8 +63,8 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
             self.send_header("content-type", "application/json")
             self.send_header("Access-Control-Allow-Origin", '*')
             self.end_headers()
-            
-            self.wfile.write(json.dumps(live_map).encode())
+
+            self.wfile.write(json.dumps(self._normalize(live_map)).encode())
 
         elif self.path == "/api/wardriving":
 
@@ -50,7 +73,7 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", '*')
             self.end_headers()
 
-            self.wfile.write(json.dumps(live_map).encode())
+            self.wfile.write(json.dumps(self._normalize(live_map)).encode())
 
         elif self.path == "/api/status":
 
