@@ -130,7 +130,7 @@ class BLEScanner {
             return await response.json();
         } catch (error) {
             console.error('Fetch error:', error);
-            return {};
+            return null; // signal a failed poll so we keep the last frame instead of blanking the radar
         }
     }
 
@@ -140,7 +140,7 @@ class BLEScanner {
             return await response.json();
         } catch (error) {
             console.error('Fetch error:', error);
-            return {};
+            return null;
         }
     }
 
@@ -290,7 +290,12 @@ class BLEScanner {
 
     async update() {
         const data = await this.fetchDevices();
-        const wardrivingData = await this.fetchWardriving();
+
+        // Transient fetch failure (server busy mid-scan): keep the current frame
+        // instead of wiping the radar, which is what made devices blink in and out.
+        if (!data) return;
+
+        const wardrivingData = await this.fetchWardriving() || {};
         const status = await this.fetchStatus();
         const now = Date.now() / 1000;
 

@@ -7,7 +7,7 @@ console = Console()
 
 
 # ETC IMPORTS
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import json, os; from pathlib import Path
 
 
@@ -38,7 +38,10 @@ class HTTP_Handler(SimpleHTTPRequestHandler):
 
         out = {}
 
-        for mac, entry in live_map.items():
+        # SNAPSHOT FIRST: the scan thread mutates live_map (adds/deletes devices)
+        # while we serialize. list() copies atomically so we never trip over a
+        # "dictionary changed size during iteration" mid-request.
+        for mac, entry in list(live_map.items()):
 
             if isinstance(entry, dict) and "data" in entry:
                 flat = dict(entry["data"])
@@ -163,7 +166,7 @@ class Web_Server():
         gui_path = str(Path(__file__).parent.parent / "gui" )
         os.chdir(gui_path)
 
-        server = HTTPServer(server_address=(address,port), RequestHandlerClass=HTTP_Handler) 
+        server = ThreadingHTTPServer(server_address=(address,port), RequestHandlerClass=HTTP_Handler)
         
         CONSOLE.print(f"[bold green][+] Successfully Launched web server")
         CONSOLE.print(f"[bold green][+] Starting Web_Server on:[bold yellow] http://localhost:{port}")
